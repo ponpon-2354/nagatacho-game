@@ -158,6 +158,7 @@ details.sm summary{font-size:.82rem;color:var(--ac)}
 input[type=range]{width:100%;accent-color:var(--ac);min-height:36px}
 .vol{display:flex;flex-direction:column;gap:.2rem;font-size:.9rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.vig{margin:.4rem 0 .5rem;display:flex;flex-direction:column;align-items:center;gap:.3rem}.vig canvas{width:100%;max-width:480px;aspect-ratio:2/1;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:10px;border:3px solid var(--hd);box-shadow:0 0 0 2px var(--gold);background:var(--hd)}.vig figcaption{font-family:var(--fd);font-size:.9rem;color:var(--ink);text-align:center}
 </style>
 <div id="app"></div><div id="toast" role="status" aria-live="polite"></div><div id="modal"></div>
 <script>
@@ -285,7 +286,19 @@ const GOAL=['総理大臣','衆議院議長','党三役','閣僚','政策実現'
 const DIF=[['EASY','地元地盤や人事で有利。資金も集めやすく、はじめての人向け'],['NORMAL','標準的な政治環境。おすすめ'],['HARD','人事競争が厳しく、失策の影響が大きい上級者向け']];
 const POL=['外交安保','経済','社会保障','憲法','地方自治'],POV=['保守的','中道','改革的'];
 /* 選挙戦略: 名称,説明,資金コスト */
-const STG=[['地元密着型','後援会と地域回り。地元地盤が活きる',3],['政策重視型','実績を訴える。政策実績が活きる',2],['無党派層への訴求','街頭演説やメディア。知名度が活きる',2],['組織票・資金重視','業界団体と資金力で固める。資金・影響力が活きる',6],['他党との選挙協力','連立相手や友党と票を融通する。他党人脈が活きる',2],['新人候補への支援','周辺区の新人を応援し党内の評価を上げる(自分の選挙は手薄)',5],['資金をかけない選挙','手弁当の運動員だけで戦う。資金は使わないが当選見込みはやや下がる',0]];
+const STG=[['地元密着型','後援会と地域回りで地元の票を固める',4],['政策重視型','これまでの政策の実績を訴える',3],['無党派層への訴求','街頭演説やメディアで広く支持を呼びかける',5],['組織票・資金重視','業界団体と資金力で票を固める',8],['新人候補への応援','周辺区の新人を応援して党内の評価を上げる',5],['資金をかけない選挙','手弁当の運動員だけで戦う',0]];
+/* 戦略ごとの当選見込みへの加算(z)・計算式の説明(f)・選挙後の効果(after) */
+const STGX=[{z:()=>.04,f:'当選見込み+4%',after:''},{z:()=>.03,f:'当選見込み+3%',after:''},{z:()=>.05,f:'当選見込み+5%',after:''},{z:()=>.08,f:'当選見込み+8%',after:''},{z:()=>0,f:'自分の選挙への上乗せはなし',after:'i5,n5,f5'},{z:()=>0,f:'上乗せはなし(費用もかからない)',after:''}];
+const bCost=()=>eNext().k<1995?4:3;
+const stgOK=i=>!!STG[i]&&!STG[i][2]||!!STG[i]&&s.st.m>=STG[i][2]+bCost();
+const isPrez=()=>s.pos.g=='pm'||!!(s.prez&&s.prez.n==s.name);
+/* 選挙の応援(自動)。L=応援に入る人、nx=条件を満たしていない応援 */
+function supp(){let L=[],nx=[];if(!s||s.left||s.ret)return{L,nx};let t=s.terms,f=s.st.f,n=s.st.n,boss=s.ruling?'政権幹部(首相・閣僚・党三役・国対委員長・各代理級)':'党幹部(総裁・党三役・国対委員長・各代理級)';
+ if(s.fac<5){let th=t<=3?15:t<=6?40:60,w=fnm(s.fac)+'の幹部';if(f>=th)L.push({w,z:.04,c:'派閥信頼度'+th+'以上'});else nx.push({w,z:.04,c:'派閥信頼度'+th+'以上(いま'+f+')'})}
+ let T=t<=3?[[10,'中堅議員',.02],[20,boss,.05]]:t<=6?[[30,'先輩議員',.02],[45,boss,.05]]:[[60,boss,.05]];
+ T.forEach(([th,w,z])=>{if(w==boss&&isPrez())return;if(n>=th)L.push({w,z,c:'党内人脈'+th+'以上'});else nx.push({w,z,c:'党内人脈'+th+'以上(いま'+n+')'})});
+ return{L,nx}}
+const suppZ=()=>supp().L.reduce((a,x)=>a+x.z,0);
 /* 史実の投票日(衆議院「総選挙一覧」・埼玉県「参議院議員通常選挙投票率の推移」で確認)。前半=1〜6月、後半=7〜12月 */
 const ED={'1983.5':'第37回・1983年12月18日','1986.5':'第38回・1986年7月6日(衆参同日選挙)','1990':'第39回・1990年2月18日','1993.5':'第40回・1993年7月18日','1996.5':'第41回・1996年10月20日','2000':'第42回・2000年6月25日','2003.5':'第43回・2003年11月9日','2005.5':'第44回・2005年9月11日','2009.5':'第45回・2009年8月30日','2012.5':'第46回・2012年12月16日','2014.5':'第47回・2014年12月14日','2017.5':'第48回・2017年10月22日','2021.5':'第49回・2021年10月31日','2024.5':'第50回・2024年10月27日','2026':'第51回・2026年2月8日'},
 UD={'1983':'第13回・1983年6月26日','1986.5':'第14回・1986年7月6日(衆参同日選挙)','1989.5':'第15回・1989年7月23日','1992.5':'第16回・1992年7月26日','1995.5':'第17回・1995年7月23日','1998.5':'第18回・1998年7月12日','2001.5':'第19回・2001年7月29日','2004.5':'第20回・2004年7月11日','2007.5':'第21回・2007年7月29日','2010.5':'第22回・2010年7月11日','2013.5':'第23回・2013年7月21日','2016.5':'第24回・2016年7月10日','2019.5':'第25回・2019年7月21日','2022.5':'第26回・2022年7月10日','2025.5':'第27回・2025年7月20日'};
@@ -454,7 +467,7 @@ const STARTS=[[1980,'1980年6月22日','第36回総選挙(衆参同日選挙)','
 [2021.5,'2021年10月31日','第49回総選挙','岸田内閣のもとで自民党は単独過半数を維持し、第2次岸田内閣が発足しました。'],
 [2024.5,'2024年10月27日','第50回総選挙','派閥の政治資金問題の逆風で自民党は大敗。公明党と合わせても過半数に届かず、第2次石破内閣は少数与党として発足しました。'],
 [2026,'2026年2月8日','第51回総選挙','高市早苗首相のもとでの解散総選挙で自民党が大勝し、政権の基盤を固めました。']];
-let SK0=1980;const VER='第23版・2026年11月22日更新';
+let SK0=1980;const VER='第25版・2026年11月22日更新';
 /* 史実の幹事長と所属派閥(系譜の番号。-1=系譜外・無派閥)。英語版ウィキペディア「Secretary-General of the Liberal Democratic Party」の就任年月と各議員の所属派閥で確認 */
 const SECF=[[1980,3,'櫻内義雄'],[1981.5,0,'二階堂進'],[1983.5,2,'田中六助'],[1984.5,0,'金丸信'],[1986.5,0,'竹下登'],[1987.5,1,'安倍晋太郎'],[1989,0,'橋本龍太郎'],[1989.5,0,'小沢一郎'],[1991,0,'小渕恵三'],[1991.5,0,'綿貫民輔'],[1992.5,0,'梶山静六'],[1993.5,1,'森喜朗'],[1995.5,2,'加藤紘一'],[1998.5,1,'森喜朗'],[2000,0,'野中広務'],[2000.5,2,'古賀誠'],[2001,-1,'山崎拓'],[2003.5,1,'安倍晋三'],[2004.5,-1,'武部勤'],[2006.5,1,'中川秀直'],[2007.5,3,'伊吹文明'],[2008.5,1,'細田博之'],[2009.5,4,'大島理森'],[2010.5,-1,'石原伸晃'],[2012.5,-1,'石破茂'],[2014.5,-1,'谷垣禎一'],[2016.5,3,'二階俊博'],[2021.5,0,'茂木敏充'],[2024.5,-1,'森山裕'],[2025.5,4,'鈴木俊一']];
 const secAt=t=>{if(t>=2027.5)return null;let r=null;for(const e of SECF)if(e[0]<=t)r=e;return r};
@@ -569,13 +582,14 @@ function retire(){cRet=0;endGame('自らの決断による引退',null);toast('�
 
 /* ===== 選挙 ===== */
 function elect(k,o){koninCheck(o);let en=eNext(),hk=en.hk!=null?String(en.hk):null,hs=hk?ELEC[hk]||0:0,est=!hs,st=s.st,N=seatsN(k),mid=+k<1995,g=s.stg||0,
- z=[st.b*.002,st.p*.003,st.k*.003,(st.m+st.i)*.002,(s.ruling?.02:.01)+st.o*.0006,-.02,-.03][g]||0,
+ z=STGX[g]?STGX[g].z():0,
  sim=simSeats(k,en,hs,N),maj=Math.floor(N/2)+1,need=hk=='1993.5'&&en.kind=='hist'?240:Math.round(N*.4),
  rec={k,hs,sim,N,maj,mid,stg:STG[g][0],est,dt:en.kind=='hist'?ED[hk]||'':'',kind:en.kind,hk,hdt:hk?ED[hk]||'':''};rec.dev=en.kind=='hist'&&hs?sim-hs:0;
  if(!s.ret){let bc=mid?4:3;if(st.m>=bc){s.st.m-=bc;o.push('選挙費用(事務所・ポスター・運動員など)-'+bc)}else{s.st.m=0;z-=.03;o.push('選挙費用が足りず、選挙戦が手薄に')}}
  if(!s.ret){let c=STG[g][2];if(c==0)o.push('資金をかけずに選挙戦');else if(st.m>=c){s.st.m-=c;o.push('選挙資金-'+c+'（'+STG[g][0]+'）')}else{z-=.03;o.push('資金不足で選挙戦が手薄に')}
-  if(g==5)ap('i3,f3','新人候補を支援',o)}
- if(s.out&&!s.ret)z+=.05;
+  if(STGX[g]&&STGX[g].after)ap(STGX[g].after,'選挙戦略:'+STG[g][0],o)}
+ if(s.out&&!s.ret){z+=.05;o.push('捲土重来を期す浪人の戦い(当選見込み+5%)')}
+ if(!s.ret)supp().L.forEach(x=>{z+=x.z;o.push('応援:'+x.w+'が選挙区に入った(当選見込み+'+Math.round(x.z*100)+'%)')});
  let p=winP(z),win=!s.ret&&Math.random()<p,rv=false;
  if(s.pos.d=='sp'||s.pos.d=='dp'){lg('衆議院解散により'+nm(s.pos.d)+'を退任','p');o.push('衆議院の解散で'+nm(s.pos.d)+'の任期が終わりました');s.pos.d=null}
  if(!s.ret){let el=(mid?R0(35,55):R0(32,46))*10000,vt=R0(52,72),tot=Math.round(el*vt/100);rec.vt=vt;rec.el=el;
@@ -606,7 +620,7 @@ function upper(k,o){let r=s.w*2+R0(-5,5),seats=cl(30,80,55+r),txt=UH[k]||'';
  let t='【参院選'+(UD[k]?'・'+UD[k]:'(推定日程)')+'】'+(txt||'史実:(このゲームでは詳細未収録)')+'／IFシミュレーション上の結果(推定):自民党の獲得'+seats+'議席・'+(r>=0?'優勢':'劣勢')+(s.nejire?'・ねじれ国会':'');o.push(t);lg(t,'e',{ifx:1})}
 
 /* ===== ターン決定 ===== */
-function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=null){if(jc&&s.jpick==null){sfx('err');return toast('役職の仕事を選んでください')}if(ic&&s.ipick==null){sfx('err');return toast('出来事への対応を選んでください')}if(s.fev&&s.fpick==null){sfx('err');return toast('派閥についての選択をしてください')}}s._jx={j:jc&&s.jpick!=null?[jc.t,jc.o[s.jpick]]:null,i:ic&&s.ipick!=null?[ic.t,ic.o[s.ipick]]:null}}if(!s.end&&s.pick!=null){let e=cur();if(blks(e.o)[s.pick].length)s.pick=null}s.mul=(s.mul||[]).filter(i=>mAvail(i)&&!mBl(i).length);if(STG[s.stg||0][2]>0&&s.st.m<=0)s.stg=6;s.jnote=null;s.selr=null;let t0=tno(),ne=s.elec.length,pb=posList(s.pos),e0=s.end,st0=Object.assign({},s.st),wh=s.y+'年'+half(s.h);sub0();if(tno()==t0){sfx('err');return}
+function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=null){if(jc&&s.jpick==null){sfx('err');return toast('役職の仕事を選んでください')}if(ic&&s.ipick==null){sfx('err');return toast('出来事への対応を選んでください')}if(s.fev&&s.fpick==null){sfx('err');return toast('派閥についての選択をしてください')}}s._jx={j:jc&&s.jpick!=null?[jc.t,jc.o[s.jpick]]:null,i:ic&&s.ipick!=null?[ic.t,ic.o[s.ipick]]:null}}if(!s.end&&s.pick!=null){let e=cur();if(blks(e.o)[s.pick].length)s.pick=null}s.mul=(s.mul||[]).filter(i=>mAvail(i)&&!mBl(i).length);if(!stgOK(s.stg||0))s.stg=STG.length-1;s.jnote=null;s.selr=null;let t0=tno(),ne=s.elec.length,pb=posList(s.pos),e0=s.end,st0=Object.assign({},s.st),wh=s.y+'年'+half(s.h);sub0();if(tno()==t0){sfx('err');return}
  let fx='next',le=s.elec[s.elec.length-1];if(s.elec.length>ne&&le&&!le.ret)fx=le.win?'win':'lose';else if(posList(s.pos).some(x=>!pb.includes(x)))fx='post';sfx(fx);chkAch();
  {let d=Object.keys(K).map(k=>[K[k],s.st[k]-st0[k]]).filter(x=>x[1]),ne2=s.elec.length>ne?s.elec[s.elec.length-1]:null,np=posList(s.pos).filter(x=>!pb.includes(x));
   let head=s.end&&!e0?'政治家人生の幕引き':s.selr?(s.selr.win?'総裁選に勝利!':'総裁選で敗れる…'):ne2&&!ne2.ret?(ne2.rv?'比例復活で当選!':ne2.win?'当選! '+s.terms+'期目':'落選…'):s.jnote&&!PLAIN.includes(s.jnote.kind)?'辞令:'+s.jnote.to:np.length?np.join('・')+'に就任':s.end?'政治家人生の幕引き':'半年が過ぎました';
@@ -614,7 +628,7 @@ function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=nu
 function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選んでください');
  let e=cur(),k=String(ky()),o=[],c=e.o[s.pick],L='ABCDEF'[s.pick],d=[],
  b={psn:posList(s.pos),ne:s.elec.length,pm:pm(),ru:s.ruling,w:s.w,t:s.terms,ps:Object.assign({},s.pos),out:s.out,nj:s.nejire,ky:ky(),y:s.y,h:s.h};
- s.rose=0;
+ s.rose=0;const _pre={inc:(s._jx&&s._jx.i)?s._jx.i[0]:'',mu:(s.mul||[]).map(i=>M[i]&&M[i][0]).filter(Boolean),st:Object.assign({},s.st),fac:s.fac,left:s.left,ach:Object.keys(s.ach||{}).length,e0:s.end};
  const nd=PM.some(x=>x[0]==ky())||s.h==1;
  if(s.ret&&e===RET){if(s.pick==5){if(age()<75){s.ret=0;s.end=0;s.out=true;lg('再出馬を表明','p')}else o.push('75歳を超えているため、再出馬は見送りました')}if(s.pick==4){s.end=1;s.final=1;s.endReason='政治活動からの完全な引退'}if(s.pick==0)s.heir=1}
  if(e.ifsel){ifSelRun(e,o)}
@@ -655,6 +669,7 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
  if(!s.out&&b.out)d.push('国政に復帰しました');
  {let a1=b.psn.join('・')||'なし',a2=posList(s.pos).join('・')||'なし';if(a1!=a2)d.push('役職の変化:'+a1+' → '+a2)}
  d.push('次の総選挙:'+eLabel());d.push('次の参院選:'+uLabel());
+ try{s.vig=pickVig(vCtx(b,e,c,o,d,_pre))}catch(err){s.vig='z_diet'}
  s.chg=d;save('ng_a',1);window.scrollTo(0,0);R()}
 
 /* ===== セーブ ===== */
@@ -754,6 +769,319 @@ function lookDesc(L){let a=[],sc=scene(L);a.push('背景:'+SCN[sc]+(sc=='local'|
  a.push('髪:'+(L.age<42?'黒髪':L.age<52?'こげ茶':L.age<60?'白髪まじり':L.age<70?'ロマンスグレー':'白髪'));if(L.age>=52)a.push('眼鏡');
  if(L.rose)a.push('当選の赤いバラ');if(L.mc>0)a.push('閣僚経験の金バッジ'+(L.mc>=3?'×2':''));if(L.terms>=10)a.push('ベテランのポケットチーフ');if(L.out)a.push('名前入りのたすき');if(L.pos.g&&L.pos.g!='pm')a.push('政府の書類');if(L.pos.g=='pm')a.push('首相として手を挙げる姿');
  a.push('下部の金の点=当選'+L.terms+'回');return a.join(' / ')}
+/* ===== 場面のドット絵(96x48・少し動く)。前のターンからの変化に1枚表示 ===== */
+const VW=96,VH=48;
+const vr=(c)=>(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h)};
+const VSK='#f0c8a2';
+function vSky(r,k){const S={day:['#8fc6ef','#a9d4f3'],eve:['#f3a35c','#f7c98a'],night:['#1a2340','#27335a'],gray:['#9aa3ad','#b4bcc4'],dawn:['#f6c7a8','#cfe1f2']}[k||'day'];r(0,0,VW,20,S[0]);r(0,20,VW,28,S[1])}
+function vCloud(r,x,y,t,col){x=((x+t*.3)%120)-12;col=col||'#fff';r(x,y,10,3,col);r(x+2,y-2,6,2,col)}
+/* ---- 背景 ---- */
+const VBG={
+diet:(r,t)=>{vSky(r);vCloud(r,10,6,t);vCloud(r,60,9,t);r(0,36,VW,12,'#7fae5a');r(14,24,68,12,'#ece5d3');for(let x=17;x<80;x+=4)r(x,27,1,8,'#cfc6b0');r(38,12,20,12,'#e6dfcc');for(let y=14;y<24;y+=3)r(40,y,16,1,'#cfc6b0');for(let i=0;i<8;i++)r(48-i,4+i,i*2+1,1,'#d9d1bc');r(48,0,1,4,'#999');r(0,40,VW,2,'#a7a39a')},
+kantei:(r,t)=>{r(0,0,VW,VH,'#d8c39b');for(let x=0;x<VW;x+=8)r(x,0,1,34,'#c2a97c');r(0,34,VW,14,'#6f4a2c');r(0,34,VW,1,'#4e321c');vFlag(r,8,6,t);vFlag(r,78,6,t);r(36,10,24,12,'#f2e8d2');r(37,11,22,10,'#e6d8b8')},
+chamber:(r,t)=>{r(0,0,VW,VH,'#6b4528');for(let x=2;x<VW;x+=6)r(x,0,1,20,'#7c5232');r(30,3,36,10,'#3e2716');r(30,13,36,1,'#c8a050');r(0,20,VW,28,'#7a1f2b');for(let y=24;y<48;y+=5){r(0,y,VW,1,'#5c1720');for(let x=(y%10);x<VW;x+=8)r(x,y-2,4,2,'#3b2a22')}},
+office:(r,t)=>{r(0,0,VW,VH,'#ece8df');r(6,5,22,16,'#8a8170');r(7,6,20,14,'#9fc9ea');r(17,6,1,14,'#8a8170');r(7,13,20,1,'#8a8170');r(72,4,20,30,'#7a5232');['#b3262e','#1e5aa0','#2e7d32','#e0a030','#6a1b9a'].forEach((cc,i)=>{for(let j=0;j<4;j++)r(73+i*4,6+j*7,3,5,j%2?cc:'#d8cfa8')});r(0,34,VW,14,'#8c7b62');r(30,30,40,4,'#5a3b22');r(32,34,2,10,'#5a3b22');r(66,34,2,10,'#5a3b22')},
+hq:(r,t)=>{r(0,0,VW,VH,'#f2ede2');r(0,2,VW,6,'#b3262e');for(let x=3;x<VW;x+=5)r(x,4,2,1,'#fff');r(6,12,14,18,'#fff');r(7,13,12,8,'#c8102e');r(7,22,12,1,'#333');r(7,25,9,1,'#333');r(76,12,14,18,'#fff');r(77,13,12,8,'#1e5aa0');r(77,22,12,1,'#333');r(0,38,VW,10,'#5a6b7d')},
+station:(r,t)=>{vSky(r);vCloud(r,30,5,t);r(10,10,76,24,'#c9b8a0');r(10,10,76,3,'#8a3a2a');for(let x=14;x<84;x+=8)r(x,16,5,8,'#9fc9ea');r(44,8,8,8,'#fff');r(44,8,8,1,'#555');r(48,10,1,3,'#333');r(48,12,2,1,'#333');r(40,26,16,8,'#4a4a4a');r(0,34,VW,14,'#b8b2a6');for(let x=0;x<VW;x+=12)r(x,40,6,1,'#fff')},
+town:(r,t)=>{vSky(r);r(0,12,VW,24,'#d9cdb4');[[2,'#c8102e'],[26,'#1e5aa0'],[50,'#2e7d32'],[74,'#e0a030']].forEach(([x,c])=>{r(x,12,22,22,'#efe6d2');r(x,20,22,3,c);for(let i=0;i<22;i+=4)r(x+i,23,2,2,c);r(x+3,26,7,8,'#7a5a3a');r(x+12,26,7,5,'#9fc9ea')});r(0,34,VW,14,'#a9a49a')},
+rural:(r,t)=>{vSky(r);vCloud(r,50,6,t);for(let y=0;y<14;y++){let w=y*2;r(20-w/2,14+y,w+1,1,'#5f8f4e');r(70-w/2,12+y,w+1,1,'#4e7f42')}r(0,28,VW,20,'#86c35a');for(let y=31;y<48;y+=4)r(0,y,VW,1,'#6aa23e');for(let x=6;x<VW;x+=12)r(x,28,1,20,'#6aa23e');r(80,22,10,6,'#8a5a3a');for(let i=0;i<4;i++)r(79+i,22-i,12-2*i,1,'#5b3a28')},
+night:(r,t)=>{vSky(r,'night');r(80,5,6,6,'#fff6c8');r(82,5,4,4,'#1a2340');[[4,3],[20,8],[40,4],[60,9],[70,2]].forEach(([x,y],i)=>{if((t+i)%6)r(x,y,1,1,'#fff')});[[0,18,10],[11,12,9],[21,22,8],[30,10,10],[41,16,9],[51,8,10],[62,20,9],[72,14,11],[84,18,12]].forEach(([x,y,w],i)=>{r(x,y,w,48-y,'#2f3a55');for(let yy=y+2;yy<44;yy+=3)for(let xx=x+1;xx<x+w-1;xx+=2)if((xx*7+yy*3+i)%5)r(xx,yy,1,1,(xx+yy+Math.floor(t/8))%11?'#ffe9a8':'#2f3a55')})},
+studio:(r,t)=>{r(0,0,VW,VH,'#1b2236');for(let x=0;x<VW;x+=12)r(x,0,6,2,'#f7e27a');r(30,6,36,20,'#2b5ea8');r(32,8,32,16,'#3f7ad1');r(34,10,(t%20)+4,2,'#fff');r(34,14,20,1,'#cfe0f5');r(0,34,VW,14,'#2c2c3a');r(22,30,52,6,'#c9c3b6');r(22,30,52,1,'#fff')},
+press:(r,t)=>{r(0,0,VW,VH,'#1f4f9a');for(let y=2;y<34;y+=8)for(let x=(y%16?0:6);x<VW;x+=12){r(x,y,4,3,'#2d63b8')}r(0,34,VW,14,'#3a3a46');r(36,28,24,8,'#7a5232');r(36,28,24,1,'#a07a52')},
+hall:(r,t)=>{r(0,0,VW,VH,'#5a2e2e');for(let x=0;x<VW;x+=10)r(x,0,1,30,'#6e3a3a');[24,72].forEach(x=>{r(x-1,0,2,4,'#c8a050');r(x-6,4,12,3,'#e8c560');for(let i=0;i<5;i++)r(x-5+i*2+((t+i)%2),7,1,1,'#fff6c8')});r(0,30,VW,18,'#8a6a4a');[[10,36],[44,38],[78,36]].forEach(([x,y])=>{r(x,y,14,3,'#f5f5f5');r(x+6,y+3,2,6,'#ddd')})},
+ryotei:(r,t)=>{r(0,0,VW,VH,'#efe3c4');for(let x=0;x<VW;x+=12){r(x,0,1,28,'#8a6a42');for(let y=4;y<28;y+=6)r(x,y,12,1,'#cdb98c')}r(0,28,VW,20,'#c9bb76');for(let x=0;x<VW;x+=16)r(x,28,1,20,'#a99b58');r(30,34,36,4,'#5a3020');r(32,38,2,4,'#3a2010');r(62,38,2,4,'#3a2010');r(44,31,4,3,'#fff');r(52,31,3,3,'#c8102e')},
+eoffice:(r,t)=>{r(0,0,VW,VH,'#f5f2ea');r(4,4,40,22,'#fff');r(4,4,40,1,'#999');for(let i=0;i<5;i++){r(7+i*7,8,5,14,'#f6f0e1');r(8+i*7,9,3,12,'#333')}for(let i=0;i<5;i++)r(7+i*7,6,5,2,'#d0213a');r(54,6,36,4,'#c8102e');r(0,36,VW,12,'#c9bfa8');r(62,14,24,3,'#7a5232')},
+home:(r,t)=>{r(0,0,VW,VH,'#f6f0e1');for(let x=0;x<VW;x+=8)r(x,0,1,32,'#c9b48a');r(60,4,24,16,'#6b4b2a');r(61,5,22,14,'#9fc9ea');r(72,5,1,14,'#6b4b2a');r(0,32,VW,16,'#c9bb76');for(let x=0;x<VW;x+=16)r(x,32,1,16,'#a99b58');r(8,26,10,6,'#6b4b3a');r(6,18,14,8,'#3f7a3a')},
+hospital:(r,t)=>{r(0,0,VW,VH,'#eef4f6');r(70,6,18,14,'#9fc9ea');r(78,6,1,14,'#fff');r(0,36,VW,12,'#cfd8dc');r(14,26,44,8,'#fff');r(14,24,10,4,'#dfe8ec');r(12,22,2,16,'#90a4ae');r(58,26,2,12,'#90a4ae');r(64,10,2,26,'#b0bec5');r(62,10,6,4,'#e3f2fd')},
+airport:(r,t)=>{vSky(r);vCloud(r,20,8,t);r(0,32,VW,16,'#8d9096');r(0,39,VW,1,'#fff');let x=(t*1.5)%140-30;r(x,14,24,4,'#f5f5f5');r(x+8,10,6,4,'#f5f5f5');r(x+8,18,6,3,'#f5f5f5');r(x+20,13,4,2,'#1e5aa0');for(let i=0;i<5;i++)r(x+3+i*3,15,1,1,'#1e5aa0')},
+disaster:(r,t)=>{vSky(r,'gray');[[4,20,14],[22,26,12],[40,18,16],[60,24,12],[76,20,16]].forEach(([x,y,w])=>{r(x,y,w,30-y+18,'#8a8a8a');for(let i=0;i<w;i+=3)r(x+i,y-(i%2),2,1,'#6a6a6a')});r(0,36,VW,12,'#7a6a58');for(let i=0;i<10;i++)r((i*13+5)%VW,38+(i%3)*3,4,2,'#5a4a38')},
+flood:(r,t)=>{vSky(r,'gray');for(let i=0;i<14;i++)r((i*7+t*2)%VW,(i*11+t*3)%30,1,3,'#cfe0f5');[[10,14],[34,10],[60,16]].forEach(([x,y])=>{r(x,y,18,24,'#b8a890');r(x,y,18,2,'#8a3a2a')});r(0,30,VW,18,'#6f8fa8');for(let y=32;y<48;y+=4)r((y*5+t)%20-10,y,VW,1,'#8fb0c8')},
+sakura:(r,t)=>{vSky(r,'dawn');[[14,8],[48,4],[82,8]].forEach(([x,y])=>{r(x-1,y+10,3,26,'#6b4b2a');r(x-10,y,20,12,'#f6b9cc');r(x-7,y-3,14,4,'#f9cfdc');r(x-12,y+4,4,5,'#f6b9cc')});r(0,36,VW,12,'#9ccf7a');for(let i=0;i<12;i++)r((i*17+t*2)%VW,(i*9+t)%40,1,1,'#fff0f5')},
+fireworks:(r,t)=>{vSky(r,'night');[[20,10,'#ffd54f'],[50,7,'#ff6f84'],[78,12,'#81d4fa']].forEach(([x,y,c],i)=>{let p=(t+i*7)%21;if(p<12)for(let a=0;a<8;a++){let dx=Math.round(Math.cos(a*.785)*p*.7),dy=Math.round(Math.sin(a*.785)*p*.7);r(x+dx,y+dy,1,1,c)}});r(0,38,VW,10,'#22305a');for(let x=0;x<VW;x+=6)r(x,36,4,2,'#4a3a5a')},
+winter:(r,t)=>{vSky(r,'gray');r(0,16,VW,20,'#d9d4cc');for(let x=4;x<VW;x+=22){r(x,20,16,16,'#bfb6a8');for(let i=0;i<10;i++)r(x-2+i,20-i/2,20-2*i,1,'#f5f8fb')}r(0,36,VW,12,'#f5f8fb');for(let i=0;i<20;i++)r((i*13+t)%VW,(i*7+t*2)%44,1,1,'#fff')},
+meeting:(r,t)=>{r(0,0,VW,VH,'#e9e4da');r(8,4,30,14,'#fff');r(9,5,28,1,'#999');r(10,8,6,8,'#4a7');r(18,11,6,5,'#c85');r(26,7,6,9,'#58c');r(0,34,VW,14,'#7d6e5a');r(10,30,76,5,'#6b4b2a')},
+lobby:(r,t)=>{r(0,0,VW,VH,'#d8cfbf');for(let x=0;x<VW;x+=16){r(x+2,0,4,34,'#e9e2d4');r(x+6,0,1,34,'#bfb4a0')}r(0,34,VW,14,'#a02a2a');r(30,34,36,14,'#b83434')},
+paper:(r,t)=>{r(0,0,VW,VH,'#ece7da');r(4,3,88,42,'#f7f4ea');r(6,5,50,6,'#222');r(60,5,30,6,'#c8102e');for(let y=14;y<42;y+=3)r(6,y,(y%9?84:40),1,'#9a9488');r(50,20,38,18,'#cfc8b8')},
+rain:(r,t)=>{vSky(r,'gray');r(0,30,VW,18,'#6e7a82');for(let i=0;i<30;i++)r((i*11+t)%VW,(i*7+t*4)%46,1,3,'#cfe0f5')}};
+function vFlag(r,x,y,t){r(x,y,1,24,'#c9c9c9');let w=(t%4<2)?0:1;r(x+1,y+w,12,8,'#fff');r(x+5,y+2+w,4,4,'#c8102e')}
+/* ---- 人物(足元の位置 x,y) ---- */
+function vFig(r,x,y,o,t){o=o||{};const sk=o.sk||VSK,su=o.su||'#22324f',hr=o.hr||'#1d1a18',p=o.p||'stand',b=(p=='cheer'||p=='jump')&&t%2?-1:0,yy=y+b;
+ let hd=p=='bow'?3:p=='sad'?1:0,hx=p=='bow'?2:0;
+ r(x+2,yy-6,2,6,o.leg||'#1f2430');r(x+6,yy-6,2,6,o.leg||'#1f2430');if(p=='run'&&t%2){r(x+1,yy-3,2,3,'#1f2430');r(x+7,yy-5,2,3,'#1f2430')}
+ r(x+1,yy-14,8,8,su);if(o.f)r(x+1,yy-8,8,3,su);
+ if(!o.nt){r(x+4,yy-14,2,4,'#f5f5f5');r(x+4,yy-13,2,3,o.tie||'#b3262e')}
+ if(o.tas){for(let i=0;i<8;i++)r(x+1+i,yy-14+i,1,1,'#fff')}
+ if(o.rose){r(x+7,yy-13,2,2,'#d0213a')}
+ const arm=(ax,up)=>{if(up)r(ax,yy-19,2,6,su);else r(ax,yy-13,2,6,su)};
+ if(p=='wave'){arm(x-1,0);r(x+9,yy-(t%2?19:17),2,6,su);r(x+9,yy-(t%2?20:18),2,2,sk)}
+ else if(p=='cheer'||p=='jump'){r(x-1,yy-20,2,7,su);r(x+9,yy-20,2,7,su);r(x-1,yy-21,2,2,sk);r(x+9,yy-21,2,2,sk)}
+ else if(p=='mic'){arm(x-1,0);r(x+9,yy-14,2,4,su);r(x+9,yy-17,2,3,sk);r(x+10,yy-20,2,3,'#333')}
+ else if(p=='point'){arm(x-1,0);r(x+9,yy-14,5,2,su);r(x+14,yy-14,2,2,sk)}
+ else if(p=='hold'){r(x-1,yy-12,2,4,su);r(x+9,yy-12,2,4,su)}
+ else if(p=='shake'){arm(x-1,0);r(x+9,yy-11,4,2,su);r(x+13,yy-11+(t%2),2,2,sk)}
+ else if(p=='write'){arm(x-1,0);r(x+9,yy-10,3,2,su)}
+ else{arm(x-1,0);arm(x+9,0)}
+ const hx0=x+2+hx,hy=yy-21+hd;r(hx0,hy,6,7,sk);
+ if(o.bald){r(hx0,hy+1,1,3,hr);r(hx0+5,hy+1,1,3,hr)}else if(o.f){r(hx0-1,hy-1,8,3,hr);r(hx0-1,hy,1,7,hr);r(hx0+6,hy,1,7,hr)}else{r(hx0,hy-1,6,2,hr);r(hx0,hy,1,2,hr);r(hx0+5,hy,1,2,hr)}
+ if(o.gl){r(hx0+1,hy+3,2,1,'#6b5a48');r(hx0+4,hy+3,2,1,'#6b5a48')}
+ if(p=='sad'||p=='bow'){r(hx0+1,hy+4,1,1,'#333');r(hx0+4,hy+4,1,1,'#333');if(p=='sad'&&t%3==0)r(hx0+5,hy+5,1,2,'#7fb6e8')}
+ else{let bl=t%9==0;r(hx0+1,hy+3,1,bl?0:1,'#222');r(hx0+4,hy+3,1,bl?0:1,'#222');if(p=='talk'||p=='mic'){r(hx0+2,hy+5,2,t%2?2:1,'#8a3a3a')}else if(p=='cheer'||p=='jump'||o.smile)r(hx0+2,hy+5,2,1,'#b5574f')}
+}
+function vMe(o){let L=look(),a=L.age;return Object.assign({su:L.ret?'#6b7d4f':L.out?'#3a5f8f':L.pos&&L.pos.g=='pm'?'#16181d':'#22324f',hr:a<42?'#1d1a18':a<52?'#34302d':a<60?'#6a6663':a<70?'#a8a5a2':'#e0ddd8',f:L.sx=='女性',gl:a>=52,tie:FCOL[L.fac]||'#888',bald:L.sx=='男性'&&a>=68,tas:L.out&&!L.ret},o||{})}
+const VNP={a:{su:'#444b55',hr:'#555'},b:{su:'#2d3e63',hr:'#ccc',gl:1},c:{su:'#5a4a3a',hr:'#222',f:1},d:{su:'#1e2a3a',hr:'#888',bald:1},e:{su:'#6a2d2d',hr:'#3a2a20'},f:{su:'#3a5a3a',hr:'#111',nt:1},g:{su:'#7a7a7a',hr:'#ddd',gl:1},h:{su:'#c8a060',hr:'#3a2a20',nt:1,f:1}};
+/* ---- 小道具 ---- */
+const VP={
+daruma:(r,x,y,t,o)=>{r(x,y-9,9,9,'#c8102e');r(x+1,y-10,7,1,'#c8102e');r(x+2,y-8,5,4,'#f5e6c8');r(x+3,y-7,1,1,'#222');if(o&&o.two)r(x+5,y-7,1,1,'#222');r(x+2,y-2,5,1,'#e8c560')},
+box:(r,x,y,t)=>{r(x,y-8,12,8,'#e8e0c8');r(x,y-8,12,1,'#a08a5a');r(x+3,y-8,6,1,'#333');if(t%4<2)r(x+4,y-11,4,3,'#fff')},
+bouquet:(r,x,y,t)=>{r(x+2,y-4,3,5,'#2f7a2f');[[0,-8,'#ff6f84'],[3,-9,'#ffd54f'],[5,-7,'#d0213a'],[2,-6,'#fff']].forEach(([a,b,c])=>r(x+a,y+b,3,3,c))},
+money:(r,x,y,t)=>{r(x,y-8,9,8,'#c9a26b');r(x+3,y-10,3,2,'#a07a42');r(x+3,y-6,3,3,'#e8c560')},
+coins:(r,x,y,t)=>{for(let i=0;i<4;i++){let yy=(t*2+i*9)%(y)-2;r(x+i*5,yy,3,3,'#e8c560');r(x+i*5+1,yy+1,1,1,'#a07a20')}},
+paper:(r,x,y,t)=>{r(x,y-10,14,10,'#f7f4ea');r(x+1,y-9,8,2,'#222');for(let i=0;i<4;i++)r(x+1,y-6+i*1.5,12,1,'#999')},
+mic:(r,x,y,t)=>{r(x+1,y-14,1,14,'#555');r(x,y-16,3,3,'#222');r(x-1,y,5,1,'#333')},
+mics:(r,x,y,t)=>{['#c8102e','#1e5aa0','#2e7d32','#e0a030'].forEach((c,i)=>{r(x+i*3,y-6-(i%2),2,3,c);r(x+i*3+.5,y-3,1,3,'#333')})},
+camera:(r,x,y,t,o)=>{vFig(r,x,y,VNP.f,t);r(x+(o&&o.l?-4:8),y-17,5,4,'#333');if(t%5==0){r(x+(o&&o.l?-6:12),y-20,4,4,'#fff')}},
+flash:(r,x,y,t)=>{for(let i=0;i<4;i++)if((t+i*3)%7==0)r((i*29+t*5)%90,4+(i*7)%20,3,3,'#fff')},
+flag:(r,x,y,t)=>vFlag(r,x,y-24,t),
+docs:(r,x,y,t)=>{for(let i=0;i<4;i++){r(x+(i%2),y-3-i*3,12,3,'#f5f5f5');r(x+(i%2),y-3-i*3,12,1,'#bbb')}},
+phone:(r,x,y,t)=>{r(x,y-5,6,5,'#222');r(x-1,y-7,8,2,'#333');if(t%4<2){r(x+7,y-9,1,2,'#333');r(x+9,y-10,1,3,'#333')}},
+envelope:(r,x,y,t)=>{r(x,y-6,10,6,'#f5ecd0');r(x,y-6,10,1,'#c9b48a');for(let i=0;i<5;i++)r(x+i,y-6+i/2,1,1,'#c9b48a'),r(x+9-i,y-6+i/2,1,1,'#c9b48a');r(x+4,y-3,2,2,'#c8102e')},
+gavel:(r,x,y,t)=>{let up=t%6<3;r(x,y-2,10,2,'#6b4b2a');r(x+2,y-(up?9:5),6,3,'#7a5232');r(x+7,y-(up?8:4),6,1,'#7a5232')},
+podium:(r,x,y,t)=>{r(x,y-12,14,12,'#7a5232');r(x-1,y-13,16,2,'#a07a52');r(x+5,y-9,4,4,'#e8c560')},
+cake:(r,x,y,t)=>{r(x,y-6,12,6,'#fff');r(x,y-6,12,1,'#ff6f84');r(x+2,y-9,1,3,'#ffd54f');r(x+6,y-9,1,3,'#ffd54f');r(x+9,y-9,1,3,'#ffd54f');if(t%2)r(x+6,y-10,1,1,'#ff9800')},
+mega:(r,x,y,t)=>{r(x,y-4,3,3,'#f5f5f5');r(x+3,y-6,5,7,'#f5f5f5');if(t%2){r(x+10,y-6,1,1,'#333');r(x+11,y-4,1,1,'#333')}},
+car:(r,x,y,t)=>{let dx=t%2;r(x+dx,y-10,30,8,'#f5f5f5');r(x+dx,y-10,30,2,'#c8102e');r(x+20+dx,y-14,10,4,'#9fc9ea');r(x+4+dx,y-2,5,3,'#222');r(x+20+dx,y-2,5,3,'#222');r(x+6+dx,y-16,4,6,'#ccc');r(x+5+dx,y-17,6,2,'#999')},
+tv:(r,x,y,t)=>{r(x,y-14,20,14,'#222');r(x+1,y-13,18,11,t%6<3?'#3f7ad1':'#5a8fe0');r(x+3,y-10,8,2,'#fff');r(x+8,y,4,1,'#222')},
+plane:(r,x,y,t)=>{let px=(x+t*2)%110-10;r(px,y,16,3,'#fff');r(px+5,y-3,4,3,'#fff');r(px+5,y+3,4,2,'#fff');r(px+13,y-1,3,2,'#1e5aa0')},
+crowd:(r,x,y,t,o)=>{let n=(o&&o.n)||8,cols=['#3a3a3a','#5a3a2a','#ccc','#222','#6a5a4a'];for(let i=0;i<n;i++){let b=((t+i)%4==0)?-1:0;r(x+i*6,y-6+b,5,6,['#455','#544','#335','#553','#454'][i%5]);r(x+i*6+1,y-10+b,4,4,VSK);r(x+i*6+1,y-11+b,4,2,cols[i%5])}},
+crowdcheer:(r,x,y,t,o)=>{let n=(o&&o.n)||8;for(let i=0;i<n;i++){let b=((t+i)%2==0)?-2:0;r(x+i*6,y-6+b,5,6,['#455','#544','#335','#553','#454'][i%5]);r(x+i*6+1,y-10+b,4,4,VSK);r(x+i*6+1,y-11+b,4,2,'#333');if(b)r(x+i*6,y-14+b,1,3,VSK),r(x+i*6+4,y-14+b,1,3,VSK)}},
+arrowup:(r,x,y,t,o)=>{let c=(o&&o.c)||'#2e9d5a',b=t%4;r(x+2,y-8-b,3,8,c);r(x,y-8-b,7,1,c);r(x+1,y-9-b,5,1,c);r(x+2,y-10-b,3,1,c);r(x+3,y-11-b,1,1,c)},
+arrowdn:(r,x,y,t,o)=>{let c=(o&&o.c)||'#c8323a',b=t%4;r(x+2,y-11+b,3,8,c);r(x,y-3+b,7,1,c);r(x+1,y-2+b,5,1,c);r(x+2,y-1+b,3,1,c);r(x+3,y+b,1,1,c)},
+bubble:(r,x,y,t,o)=>{r(x,y-9,14,8,'#fff');r(x+2,y-1,2,2,'#fff');let s=(o&&o.s)||'…';if(s=='!'){r(x+6,y-8,2,4,'#c8102e');r(x+6,y-3,2,1,'#c8102e')}else if(s=='?'){r(x+5,y-8,4,1,'#333');r(x+8,y-7,1,2,'#333');r(x+6,y-5,2,1,'#333');r(x+6,y-3,2,1,'#333')}else if(s=='♪'){r(x+7,y-8,1,5,'#333');r(x+5,y-4,3,2,'#333');r(x+8,y-8,3,1,'#333')}else if(s=='¥'){r(x+5,y-8,1,2,'#a07a20');r(x+8,y-8,1,2,'#a07a20');r(x+6,y-6,2,4,'#a07a20');r(x+5,y-5,4,1,'#a07a20')}else{for(let i=0;i<3;i++)r(x+3+i*3,y-5,2,2,(t+i)%3?'#999':'#333')}},
+heart:(r,x,y,t)=>{let b=t%4<2?0:-1;r(x,y-5+b,2,2,'#e0435a');r(x+3,y-5+b,2,2,'#e0435a');r(x,y-4+b,5,2,'#e0435a');r(x+1,y-2+b,3,1,'#e0435a');r(x+2,y-1+b,1,1,'#e0435a')},
+sweat:(r,x,y,t)=>{if(t%4<3){r(x,y-3,2,3,'#7fb6e8');r(x,y-4,1,1,'#7fb6e8')}},
+cross:(r,x,y,t)=>{r(x,y-10,10,10,'#fff');r(x+4,y-9,2,8,'#d0213a');r(x+1,y-6,8,2,'#d0213a')},
+sake:(r,x,y,t)=>{r(x,y-6,4,6,'#f5f0e1');r(x+1,y-8,2,2,'#f5f0e1');r(x+6,y-3,3,3,'#fff')},
+table:(r,x,y,t,o)=>{let w=(o&&o.w)||30;r(x,y-6,w,3,'#6b4b2a');r(x+2,y-3,2,3,'#5a3b22');r(x+w-4,y-3,2,3,'#5a3b22')},
+board:(r,x,y,t)=>{r(x,y-18,24,16,'#fff');r(x,y-18,24,1,'#888');for(let i=0;i<5;i++){r(x+2+i*4,y-15,3,10,'#f6f0e1');r(x+3+i*4,y-14,1,8,'#333')}r(x+2,y-17,3,2,'#d0213a');r(x+6,y-17,3,2,'#d0213a');r(x+10,y-17,3,2,'#d0213a')},
+banner:(r,x,y,t,o)=>{let c=(o&&o.c)||'#c8102e',w=(o&&o.w)||40;r(x,y,w,6,c);r(x+1,y+1,w-2,4,'#fff');for(let i=3;i<w-3;i+=4)r(x+i,y+2,2,2,c)},
+star:(r,x,y,t)=>{if(t%4<3){r(x+2,y-5,1,5,'#ffd54f');r(x,y-3,5,1,'#ffd54f');r(x+1,y-4,3,3,'#ffe082')}},
+moon:(r,x,y,t)=>{r(x,y-6,6,6,'#fff6c8');r(x+2,y-7,5,5,'#1a2340')},
+sun:(r,x,y,t)=>{r(x,y-6,6,6,'#ffd54f');if(t%2){r(x-2,y-3,1,1,'#ffd54f');r(x+7,y-3,1,1,'#ffd54f');r(x+3,y-9,1,1,'#ffd54f')}},
+bed:(r,x,y,t)=>{r(x,y-6,24,4,'#fff');r(x,y-8,6,3,'#dfe8ec');r(x+6,y-8,18,2,'#bcd7ea')},
+zzz:(r,x,y,t)=>{let k=t%6;r(x+k,y-k*1.5,3,1,'#5a6b7d');r(x+k+2,y-k*1.5+1,1,1,'#5a6b7d');r(x+k,y-k*1.5+2,3,1,'#5a6b7d')},
+suitcase:(r,x,y,t)=>{r(x,y-7,10,7,'#7a5232');r(x+3,y-9,4,2,'#5a3b22')},
+lantern:(r,x,y,t)=>{r(x,y-8,6,8,(t%4<2)?'#ff7043':'#ff8a65');r(x,y-8,6,1,'#333');r(x,y-1,6,1,'#333')},
+rubble:(r,x,y,t)=>{for(let i=0;i<5;i++)r(x+i*4,y-2-(i%2)*2,4,3,'#7a6a58')},
+helmet:(r,x,y,t)=>{r(x,y-3,6,3,'#ffffff')},
+shovel:(r,x,y,t)=>{r(x,y-12,1,10,'#7a5232');r(x-1,y-3,3,3,'#888')},
+rice:(r,x,y,t)=>{for(let i=0;i<6;i++){r(x+i*3,y-8+(t+i)%2,1,8,'#d9c35a');r(x+i*3-1,y-9+(t+i)%2,3,2,'#e8d47a')}},
+ballot:(r,x,y,t)=>{let k=t%8;r(x,y-14+k,5,4,'#fff');r(x+1,y-13+k,3,1,'#333')},
+mask:(r,x,y,t)=>{r(x,y,4,2,'#fff')},
+syringe:(r,x,y,t)=>{r(x,y-2,10,2,'#e3f2fd');r(x+10,y-1.5,4,1,'#999');r(x-2,y-3,2,4,'#90a4ae')},
+torch:(r,x,y,t)=>{r(x+2,y-10,2,10,'#c8a050');r(x+1,y-14+(t%2),4,4,'#ff7043');r(x+2,y-15+(t%2),2,2,'#ffd54f')},
+rings:(r,x,y,t)=>{['#1e5aa0','#222','#c8102e','#e0a030','#2e7d32'].forEach((c,i)=>{let cx=x+i*5,cy=y-(i%2?3:6);r(cx,cy,5,1,c);r(cx,cy+3,5,1,c);r(cx,cy,1,4,c);r(cx+4,cy,1,4,c)})},
+gold:(r,x,y,t)=>{r(x,y-4,4,4,'#e8c560');r(x+1,y-3,2,2,'#fff6c8')},
+book:(r,x,y,t)=>{r(x,y-8,12,8,'#2c5aa0');r(x+1,y-7,10,1,'#fff');r(x+6,y-8,1,8,'#1a3a70')},
+chart:(r,x,y,t,o)=>{r(x,y-16,22,16,'#fff');r(x+1,y-1,20,1,'#555');r(x+1,y-15,1,14,'#555');let up=!(o&&o.dn);for(let i=0;i<5;i++){let h=up?3+i*2+((t+i)%2):12-i*2;r(x+3+i*4,y-1-h,2,h,up?'#2e9d5a':'#c8323a')}},
+};
+/* ---- 画面全体の演出 ---- */
+const VFX={
+confetti:(r,t)=>{const C=['#ffd54f','#ff6f84','#81d4fa','#a5d6a7','#fff'];for(let i=0;i<26;i++)r((i*37+Math.sin(t/3+i)*3+96)%96,(i*13+t*2)%50-2,2,1+(i+t)%2,C[i%5])},
+rainfx:(r,t)=>{for(let i=0;i<28;i++)r((i*11+t)%96,(i*7+t*4)%48,1,3,'rgba(200,220,240,.8)')},
+snow:(r,t)=>{for(let i=0;i<24;i++)r((i*13+Math.sin(t/4+i)*2+96)%96,(i*7+t)%48,1,1,'#fff')},
+petals:(r,t)=>{for(let i=0;i<16;i++)r((i*17+t*2)%96,(i*9+t)%48,2,1,'#fbd3e0')},
+sparkle:(r,t)=>{for(let i=0;i<8;i++){if((t+i*2)%5==0){let x=(i*23+7)%92,y=(i*11+5)%30;r(x,y,1,3,'#fff6c8');r(x-1,y+1,3,1,'#fff6c8')}}},
+gloom:(r,t)=>{r(0,0,96,48,'rgba(20,30,50,.25)')},
+night:(r,t)=>{r(0,0,96,48,'rgba(10,15,40,.35)')},
+shake:(r,t)=>{},
+spot:(r,t)=>{r(0,0,96,48,'rgba(0,0,0,.25)');r(30,0,36,48,'rgba(255,250,220,.15)')},
+leaves:(r,t)=>{const C=['#e07a3a','#d0453a','#e0b040'];for(let i=0;i<14;i++)r((i*19+t*2)%96,(i*11+t)%48,2,2,C[i%3])},
+heat:(r,t)=>{if(t%3==0)for(let i=0;i<5;i++)r(i*20+5,20+i%3,8,1,'rgba(255,255,255,.3)')},
+redflash:(r,t)=>{if(t%6<2)r(0,0,96,48,'rgba(200,30,40,.12)')}};
+/* ---- 場面の部品を描く ---- */
+function vDraw(cv,v,t){const c=cv.getContext('2d');c.imageSmoothingEnabled=false;const r=vr(c);c.clearRect(0,0,VW,VH);
+ (VBG[v.bg]||VBG.diet)(r,t);
+ (v.it||[]).forEach(a=>{let [ty,x,y,o]=a;if(ty=='me')vFig(r,x,y,vMe(o),t);else if(ty in VNP)vFig(r,x,y,Object.assign({},VNP[ty],o||{}),t);else if(VP[ty])VP[ty](r,x,y,t,o)});
+ (v.fx?[].concat(v.fx):[]).forEach(f=>VFX[f]&&VFX[f](r,t))}
+/* ---- 場面の判定に使う情報 ---- */
+function vCtx(b,e,c0,o,d,pre){const all=(o||[]).concat(d||[]).join(' '),el=s.elec.length>b.ne?s.elec[s.elec.length-1]:null,P0=Object.values(b.ps).filter(Boolean),P1=Object.values(s.pos).filter(Boolean),np=P1.filter(x=>!P0.includes(x)),gone=P0.filter(x=>!P1.includes(x));
+ return {all,k:String(b.ky),et:e&&e.t||'',ot:c0&&c0[0]||'',inc:pre.inc||'',mu:pre.mu||[],el,win:el&&!el.ret&&el.win,rv:el&&el.rv,lost:el&&!el.ret&&!el.win,np,gone,sel:s.selr,j:s.jnote,pos:s.pos,out:s.out,wasOut:b.out,ret:s.ret,end:s.end&&!pre.e0,er:s.endReason||'',y:s.y,h:b.h,age:age(),terms:s.terms,ru:s.ruling,ruCh:b.ru!=s.ruling,pmCh:pm()!=b.pm,left:s.left,wasLeft:pre.left,dm:s.st.m-pre.st.m,ds:k=>s.st[k]-pre.st[k],fac:s.fac,fac0:pre.fac,ach:Object.keys(s.ach||{}).length>pre.ach,pm:s.pos.g=='pm',wasPm:b.ps.g=='pm'}}
+const has=(c,re)=>re.test(c.all),npHas=(c,ids)=>ids.some(id=>c.np.includes(id)),posIs=(c,ids)=>ids.some(id=>Object.values(c.pos).includes(id)),ek=(c,ks)=>ks.includes(c.k);
+/* ---- 場面の一覧(pr=優先度、m=条件)。同じ優先度で複数当てはまるときは順番に入れ替わる ---- */
+const VIG=[
+/* 終幕 */
+{id:'death',pr:100,cap:'静かに幕を下ろした政治家人生',bg:'hospital',it:[['bed',14,36],['bouquet',62,36],['lantern',80,34]],fx:'gloom',m:c=>c.end&&/病死/.test(c.er)},
+{id:'yutai',pr:100,cap:'勇退。花束を手に後援会へ感謝を伝える',bg:'hall',it:[['crowdcheer',4,46,{n:5}],['me',44,44,{p:'bow'}],['bouquet',56,40],['crowdcheer',66,46,{n:5}]],fx:'petals',m:c=>c.end&&/勇退/.test(c.er)},
+{id:'health',pr:100,cap:'体調を理由に政界を退く決断',bg:'home',it:[['me',40,42,{p:'sad'}],['cross',70,30],['sake',20,40]],fx:'gloom',m:c=>c.end&&/健康/.test(c.er)},
+{id:'age80',pr:100,cap:'80歳を迎え、長い政治家人生に区切り',bg:'sakura',it:[['me',42,44,{p:'wave'}],['cake',60,44]],fx:'petals',m:c=>c.end&&/80歳/.test(c.er)},
+{id:'endgen',pr:99,cap:'政治家人生の幕引き',bg:'home',it:[['me',42,42,{p:'stand',smile:1}],['book',64,40]],fx:'leaves',m:c=>c.end},
+/* 選挙 */
+{id:'win1',pr:92,cap:'初当選!だるまに両目が入った',bg:'eoffice',it:[['daruma',60,36,{two:1}],['me',40,44,{p:'cheer',rose:1}],['crowdcheer',2,48,{n:6}]],fx:'confetti',m:c=>c.win&&!c.rv&&c.terms<=1},
+{id:'winbig',pr:91,cap:'圧勝!当確の速報に事務所が沸く',bg:'eoffice',it:[['board',58,34],['daruma',86,36,{two:1}],['me',36,44,{p:'jump',rose:1}],['crowdcheer',0,48,{n:5}],['tv',4,30]],fx:'confetti',m:c=>c.win&&!c.rv&&c.el&&c.el.share>=50},
+{id:'winmid',pr:91,cap:'中選挙区を勝ち抜いた!',bg:'eoffice',it:[['daruma',64,36,{two:1}],['me',40,44,{p:'cheer',rose:1}],['b',22,44,{p:'cheer'}],['c',76,44,{p:'cheer'}]],fx:'confetti',m:c=>c.win&&c.el&&c.el.mid},
+{id:'winnarrow',pr:90,cap:'深夜までもつれた接戦を制した',bg:'night',it:[['me',42,44,{p:'cheer',rose:1}],['tv',66,40],['sweat',52,24]],fx:'sparkle',m:c=>c.win&&!c.rv&&c.el&&c.el.share<46},
+{id:'winback',pr:91,cap:'捲土重来!浪人生活を経て国政に返り咲く',bg:'eoffice',it:[['daruma',62,36,{two:1}],['me',40,44,{p:'cheer',rose:1}],['crowdcheer',0,48,{n:6}]],fx:['confetti','sparkle'],m:c=>c.win&&c.wasOut},
+{id:'win',pr:89,cap:'当選!支援者と万歳三唱',bg:'eoffice',it:[['daruma',64,36,{two:1}],['me',42,44,{p:'cheer',rose:1}],['crowdcheer',2,48,{n:6}]],fx:'confetti',m:c=>c.win&&!c.rv},
+{id:'rv',pr:90,cap:'小選挙区で敗れるも比例で復活当選',bg:'night',it:[['me',40,44,{p:'bow'}],['tv',64,40],['daruma',18,38]],fx:'sparkle',m:c=>c.rv},
+{id:'lose2',pr:90,cap:'またも届かず…それでも地元を回る',bg:'rain',it:[['me',42,44,{p:'sad'}],['daruma',64,40],['mega',24,40]],fx:'rainfx',m:c=>c.lost&&(s.lstr||0)>=2},
+{id:'lose',pr:89,cap:'落選…支援者に深く頭を下げる',bg:'eoffice',it:[['me',42,44,{p:'bow'}],['daruma',66,38],['crowd',2,48,{n:5}]],fx:'gloom',m:c=>c.lost},
+{id:'ruback',pr:88,cap:'自民党、政権に復帰',bg:'diet',it:[['me',40,46,{p:'cheer'}],['flag',70,46]],fx:'confetti',m:c=>c.ruCh&&c.ru},
+{id:'rufall',pr:88,cap:'自民党、野党に転落',bg:'diet',it:[['me',40,46,{p:'sad'}]],fx:['gloom','rainfx'],m:c=>c.ruCh&&!c.ru},
+{id:'retcall',pr:85,cap:'引退後、後継者の選挙を見守る',bg:'eoffice',it:[['me',60,44,{p:'stand',smile:1}],['a',34,44,{p:'wave',tas:1}],['daruma',12,38]],m:c=>c.ret&&c.el},
+/* 総裁選・首相 */
+{id:'selwin',pr:87,cap:'総裁選に勝利!',bg:'hq',it:[['me',42,44,{p:'cheer'}],['crowdcheer',0,48,{n:6}],['crowdcheer',60,48,{n:6}]],fx:['confetti','flash'],m:c=>c.sel&&c.sel.win},
+{id:'sellose',pr:87,cap:'総裁選に敗れる…',bg:'hq',it:[['me',42,44,{p:'bow'}],['crowd',0,48,{n:5}]],fx:'gloom',m:c=>c.sel&&!c.sel.win},
+{id:'pmnew',pr:86,cap:'内閣総理大臣に就任。官邸の階段で記念撮影',bg:'kantei',it:[['me',42,44,{p:'wave'}],['b',24,44],['c',62,44],['d',76,44]],fx:'flash',m:c=>c.pm&&!c.wasPm},
+{id:'pmout',pr:86,cap:'首相を退任。官邸を後にする',bg:'kantei',it:[['me',44,44,{p:'bow'}],['suitcase',58,44]],fx:'night',m:c=>c.wasPm&&!c.pm},
+{id:'pmdis',pr:84,cap:'伝家の宝刀。解散を宣言',bg:'chamber',it:[['me',42,40,{p:'point'}],['crowdcheer',0,48,{n:16}]],fx:'redflash',m:c=>c.pm&&has(c,/解散/)},
+{id:'pmgai',pr:60,cap:'首脳外交のため外遊へ',bg:'airport',it:[['me',40,44,{p:'wave'}],['suitcase',52,44]],m:c=>c.pm&&/外遊|首脳/.test(c.ot)},
+{id:'pmkai',pr:60,cap:'記者会見で国民に語りかける',bg:'press',it:[['podium',38,44],['me',40,32,{p:'talk'}],['camera',6,46],['camera',80,46,{l:1}]],fx:'flash',m:c=>c.pm},
+{id:'pmchg',pr:47,cap:'首相が交代。新内閣が発足',bg:'kantei',it:[['b',30,44,{p:'wave'}],['me',58,44,{p:'stand'}]],fx:'flash',m:c=>c.pmCh},
+/* 人事 */
+{id:'kansan',pr:80,cap:'内閣官房長官に就任。政府の顔として会見に',bg:'press',it:[['podium',38,44],['me',40,32,{p:'talk'}],['camera',8,46]],fx:'flash',m:c=>npHas(c,['g6'])},
+{id:'shuyo',pr:80,cap:'主要閣僚に就任。呼び込みを受け官邸へ',bg:'kantei',it:[['me',40,44,{p:'bow'}],['phone',66,40]],fx:'flash',m:c=>npHas(c,['g5'])},
+{id:'nyukaku',pr:80,cap:'初入閣!官邸の赤じゅうたんで記念撮影',bg:'kantei',it:[['a',14,44],['me',34,44,{p:'stand',smile:1}],['b',52,44],['c',70,44]],fx:['flash','sparkle'],m:c=>npHas(c,['g4'])&&s.mc<=1},
+{id:'daijin',pr:79,cap:'大臣に就任。官邸からの呼び込み',bg:'kantei',it:[['me',40,44,{p:'bow'}],['phone',66,40]],fx:'flash',m:c=>npHas(c,['g4'])},
+{id:'sec',pr:80,cap:'幹事長に就任。党の金と選挙を握る',bg:'hq',it:[['me',40,44,{p:'point'}],['money',62,44],['docs',14,44]],fx:'sparkle',m:c=>npHas(c,['sec'])},
+{id:'so3',pr:80,cap:'総務会長に就任。党議決定のかなめ',bg:'meeting',it:[['me',42,40,{p:'talk'}],['a',14,40],['b',70,40],['gavel',30,30]],m:c=>npHas(c,['so3'])},
+{id:'pr6',pr:80,cap:'政調会長に就任。党の政策の司令塔へ',bg:'meeting',it:[['me',42,40,{p:'point'}],['chart',68,32],['docs',10,34]],m:c=>npHas(c,['pr6'])},
+{id:'kt5',pr:79,cap:'国対委員長に就任。与野党の折衝役',bg:'ryotei',it:[['me',30,40,{p:'talk'}],['e',60,40,{p:'talk'}],['sake',48,32]],m:c=>npHas(c,['kt5'])},
+{id:'speaker',pr:80,cap:'衆議院議長に就任。議長席から議場を見渡す',bg:'chamber',it:[['podium',40,22],['me',42,14,{p:'stand'}],['gavel',62,22]],m:c=>npHas(c,['sp'])},
+{id:'vspeaker',pr:79,cap:'衆議院副議長に就任',bg:'chamber',it:[['me',42,18,{p:'stand',smile:1}],['gavel',60,22]],m:c=>npHas(c,['dp'])},
+{id:'facboss',pr:79,cap:'派閥の会長に。料亭で領袖としての初会合',bg:'ryotei',it:[['me',42,40,{p:'talk'}],['a',18,40],['b',66,40],['sake',56,32]],fx:'sparkle',m:c=>npHas(c,['f3'])},
+{id:'facsub',pr:76,cap:'派閥の会長代行に就任',bg:'ryotei',it:[['b',30,40,{p:'talk'}],['me',58,40,{p:'bow'}]],m:c=>npHas(c,['f2'])},
+{id:'daiko',pr:75,cap:'党の要職の代理に就任',bg:'hq',it:[['me',40,44,{p:'hold'}],['docs',58,44]],m:c=>npHas(c,['sk3','pr5','so2','kt4'])},
+{id:'fukudaijin',pr:74,cap:'副大臣・官房副長官として省内を回る',bg:'office',it:[['me',40,44,{p:'hold'}],['docs',56,34],['a',72,44]],m:c=>npHas(c,['g2','g3'])},
+{id:'seimu',pr:73,cap:'政務官(政務次官)に就任。初めての役所勤め',bg:'office',it:[['me',40,44,{p:'stand',smile:1}],['docs',56,34]],m:c=>npHas(c,['g1'])},
+{id:'iincho',pr:73,cap:'委員長として委員会を取り仕切る',bg:'meeting',it:[['me',42,40,{p:'talk'}],['mic',56,40],['a',12,40],['c',74,40]],m:c=>npHas(c,['c1','c2','c3','c4'])},
+{id:'kokutai',pr:72,cap:'国対の一員として国会日程の調整へ',bg:'lobby',it:[['me',30,46,{p:'run'}],['a',60,46,{p:'talk'}]],m:c=>npHas(c,['kt1','kt2','kt3'])},
+{id:'buka',pr:72,cap:'党の部会で政策の議論に加わる',bg:'meeting',it:[['me',40,40,{p:'write'}],['a',14,40],['b',66,40]],m:c=>npHas(c,['pr1','pr2','pr3','pr4'])},
+{id:'fukukanji',pr:72,cap:'幹事長室で選挙の情勢を調べる',bg:'hq',it:[['me',40,44,{p:'hold'}],['phone',60,40],['docs',12,44]],m:c=>npHas(c,['sk1','sk2','so1'])},
+{id:'jirei',pr:70,cap:'辞令を受け取る',bg:'hq',it:[['b',30,44,{p:'hold'}],['me',54,44,{p:'bow'}],['envelope',42,34]],m:c=>c.j&&c.np.length},
+{id:'mueki',pr:69,cap:'役職を離れ、しばし充電期間',bg:'home',it:[['me',40,42,{p:'stand'}],['book',58,38]],m:c=>c.gone.length&&!c.np.length&&!c.out},
+{id:'susp',pr:71,cap:'役職停止の処分を受ける',bg:'press',it:[['me',42,44,{p:'bow'}],['camera',8,46],['camera',80,46,{l:1}]],fx:['flash','gloom'],m:c=>has(c,/役職停止の処分を受け|処分を受け/)},
+{id:'cold',pr:68,cap:'派閥の指示に背き、冷や飯を食う',bg:'winter',it:[['me',42,44,{p:'sad'}]],fx:'snow',m:c=>has(c,/冷遇/)},
+/* 党・派閥 */
+{id:'ridatsu',pr:78,cap:'自民党を離党。無所属で歩み出す',bg:'rain',it:[['me',40,44,{p:'stand'}],['suitcase',54,44]],fx:'rainfx',m:c=>c.left&&!c.wasLeft},
+{id:'fukuto',pr:78,cap:'自民党に復党。古巣に戻る',bg:'hq',it:[['b',28,44,{p:'shake'}],['me',46,44,{p:'shake'}]],fx:'sparkle',m:c=>!c.left&&c.wasLeft},
+{id:'konin',pr:77,cap:'党の公認から外れる',bg:'rain',it:[['me',42,44,{p:'sad',tas:1}]],fx:'rainfx',m:c=>has(c,/公認から外れ/)},
+{id:'josek',pr:77,cap:'派閥から除籍される',bg:'ryotei',it:[['b',22,40,{p:'point'}],['me',56,40,{p:'bow'}]],fx:'gloom',m:c=>has(c,/除籍/)},
+{id:'fkaisan',pr:76,cap:'派閥の解散。最後の会合',bg:'ryotei',it:[['a',20,40,{p:'bow'}],['me',44,40,{p:'sad'}],['b',68,40,{p:'bow'}]],fx:'gloom',m:c=>has(c,/は解散しました/)},
+{id:'fkeisho',pr:66,cap:'派閥の代替わり。新会長のもとで再出発',bg:'ryotei',it:[['b',40,40,{p:'talk'}],['me',14,40],['a',68,40]],fx:'sparkle',m:c=>has(c,/派閥の継承|になりました\(時期は目安\)/)},
+{id:'fido',pr:66,cap:'派閥を移って新しい仲間と握手',bg:'ryotei',it:[['me',34,40,{p:'shake'}],['b',52,40,{p:'shake'}]],m:c=>c.fac!=c.fac0&&c.fac<5},
+{id:'mufa',pr:66,cap:'無派閥として独自の道を歩む',bg:'town',it:[['me',42,44,{p:'wave'}]],m:c=>c.fac!=c.fac0&&c.fac==5},
+{id:'zohan',pr:74,cap:'党の方針に造反。議場がどよめく',bg:'chamber',it:[['me',42,40,{p:'point'}],['crowd',0,48,{n:16}],['bubble',56,22,{s:'!'}]],fx:'redflash',m:c=>has(c,/造反/)},
+{id:'renritsu',pr:64,cap:'連立政権の協議がまとまる',bg:'kantei',it:[['a',30,44,{p:'shake'}],['me',48,44,{p:'shake'}]],fx:'flash',m:c=>has(c,/連立/)&&c.ruCh},
+{id:'selsup',pr:65,cap:'総裁選。推した候補の勝利に沸く',bg:'hq',it:[['b',40,44,{p:'cheer'}],['me',62,44,{p:'cheer'}],['crowdcheer',0,48,{n:6}]],fx:'confetti',m:c=>has(c,/支持した候補が逆転勝利|勝ち馬を支持/)},
+{id:'selsupl',pr:65,cap:'総裁選。推した候補は及ばず',bg:'hq',it:[['b',40,44,{p:'bow'}],['me',60,44,{p:'sad'}]],fx:'gloom',m:c=>has(c,/支持した候補は及ばず/)},
+{id:'selyok',pr:58,cap:'総裁選が近づき、党内がざわめく',bg:'lobby',it:[['a',20,46,{p:'talk'}],['me',44,46,{p:'stand'}],['b',68,46,{p:'talk'}],['bubble',54,24,{s:'?'}]],m:c=>has(c,/予告:.*総裁選/)},
+{id:'ach',pr:57,cap:'新たな実績を達成!',bg:'hall',it:[['me',42,44,{p:'cheer'}],['star',30,20],['star',60,16]],fx:'sparkle',m:c=>c.ach},
+/* 選挙前の動き */
+{id:'efund',pr:46,cap:'総選挙へ。党と派閥から選挙資金が届く',bg:'eoffice',it:[['me',40,44,{p:'hold'}],['money',56,44],['money',66,44],['daruma',80,38]],fx:'sparkle',m:c=>has(c,/総選挙に向けた選挙資金/)},
+{id:'kuwari',pr:55,cap:'区割りが変わり、新しい選挙区へ',bg:'paper',it:[['me',70,44,{p:'point'}]],m:c=>has(c,/区割り/)},
+/* 突発の出来事 */
+{id:'i_kisai',pr:50,cap:'収支報告書の記載ミスを謝罪',bg:'press',it:[['me',42,44,{p:'bow'}],['camera',8,46],['camera',80,46,{l:1}],['sweat',52,22]],fx:'flash',m:c=>/記載ミス/.test(c.inc)},
+{id:'i_matsuri',pr:50,cap:'地元の祭りで神輿を担ぐ',bg:'town',it:[['lantern',10,24],['lantern',84,24],['me',40,44,{p:'cheer',su:'#3a6ea5'}],['crowdcheer',56,48,{n:6}]],fx:'confetti',m:c=>/祭り/.test(c.inc)},
+{id:'i_tv',pr:50,cap:'テレビの討論番組に出演',bg:'studio',it:[['me',30,30,{p:'talk'}],['e',56,30,{p:'talk'}]],fx:'spot',m:c=>/討論番組/.test(c.inc)},
+{id:'i_enjo',pr:50,cap:'同僚議員から資金の相談',bg:'ryotei',it:[['a',30,40,{p:'bow'}],['me',56,40,{p:'stand'}],['envelope',44,32]],m:c=>/資金の援助/.test(c.inc)},
+{id:'i_gou',pr:50,cap:'豪雨の被災地へ',bg:'flood',it:[['me',40,44,{p:'point',su:'#3a5f8f'}],['helmet',42,24]],fx:'rainfx',m:c=>/豪雨/.test(c.inc)},
+{id:'i_shitsugen',pr:50,cap:'失言が報じられ、記者に囲まれる',bg:'lobby',it:[['me',42,46,{p:'sad'}],['camera',12,46],['camera',72,46,{l:1}],['mics',28,30]],fx:'flash',m:c=>/失言/.test(c.inc)},
+{id:'i_benkyo',pr:50,cap:'若手の勉強会の代表に推される',bg:'meeting',it:[['me',42,40,{p:'talk'}],['f',14,40],['h',70,40]],m:c=>/勉強会の代表/.test(c.inc)},
+{id:'i_shisatsu',pr:50,cap:'超党派の議員団で海外視察へ',bg:'airport',it:[['a',20,44,{p:'wave'}],['me',40,44,{p:'wave'}],['suitcase',52,44]],m:c=>/海外視察/.test(c.inc)},
+{id:'i_kenkin',pr:50,cap:'業界団体から献金の申し出',bg:'ryotei',it:[['e',30,40,{p:'bow'}],['me',58,40,{p:'stand'}],['envelope',44,32]],m:c=>/献金/.test(c.inc)},
+{id:'i_sns',pr:50,cap:'SNSの投稿が拡散される',bg:'night',it:[['me',42,44,{p:'hold'}],['heart',30,24],['heart',62,20],['bubble',66,30,{s:'!'}]],m:c=>/SNS/.test(c.inc)},
+{id:'i_koen',pr:50,cap:'長年の後援会長が勇退',bg:'home',it:[['g',30,42,{p:'bow'}],['me',56,42,{p:'bow'}],['bouquet',44,34]],m:c=>/後援会長/.test(c.inc)},
+{id:'i_gaiyu',pr:50,cap:'首相の外遊に同行',bg:'airport',it:[['b',28,44,{p:'wave'}],['me',46,44,{p:'stand'}]],m:c=>/外遊への同行/.test(c.inc)},
+{id:'i_kosoku',pr:50,cap:'党議拘束と地元の声の板挟み',bg:'chamber',it:[['me',42,40,{p:'sad'}],['bubble',54,22,{s:'?'}]],m:c=>/党議拘束/.test(c.inc)},
+/* 史実の出来事 */
+{id:'h_zaisei',pr:42,cap:'鈴木内閣の発足。財政再建が焦点に',bg:'kantei',it:[['docs',30,44],['me',50,44,{p:'hold'}]],m:c=>ek(c,['1980.5'])},
+{id:'h_rincho',pr:42,cap:'臨調の答申。行革の議論が本格化',bg:'meeting',it:[['me',42,40,{p:'write'}],['docs',14,34],['chart',64,32,{dn:1}]],m:c=>ek(c,['1981'])},
+{id:'h_lockheed',pr:42,cap:'ロッキード事件一審判決の号外',bg:'paper',it:[['me',72,44,{p:'sad'}]],m:c=>ek(c,['1983.5'])},
+{id:'h_mineika',pr:42,cap:'NTT・JT・JRの誕生。民営化の時代',bg:'station',it:[['me',40,44,{p:'wave'}],['crowd',58,46,{n:5}]],m:c=>ek(c,['1985','1987'])},
+{id:'h_plaza',pr:42,cap:'円高が進み、輸出企業が悲鳴',bg:'town',it:[['me',40,44,{p:'talk'}],['chart',62,40,{dn:1}]],m:c=>ek(c,['1985.5'])},
+{id:'h_shohizei',pr:42,cap:'消費税の導入をめぐる攻防',bg:'town',it:[['me',40,44,{p:'talk'}],['crowd',58,46,{n:5}],['bubble',60,26,{s:'¥'}]],m:c=>ek(c,['1988.5','2012'])},
+{id:'h_recruit',pr:42,cap:'リクルート事件で政治不信が広がる',bg:'press',it:[['me',42,44,{p:'sad'}],['camera',8,46],['camera',80,46,{l:1}]],fx:'flash',m:c=>ek(c,['1989'])},
+{id:'h_heisei',pr:42,cap:'「平成」の新元号が発表される',bg:'press',it:[['podium',38,44],['b',40,32,{p:'hold'}],['camera',8,46]],fx:'flash',m:c=>ek(c,['1989'])},
+{id:'h_wangan',pr:42,cap:'湾岸戦争と国際貢献の議論',bg:'paper',it:[['me',72,44,{p:'point'}],['flag',14,44]],m:c=>ek(c,['1991','1992'])},
+{id:'h_fushinnin',pr:42,cap:'不信任案の採決。議場は騒然',bg:'chamber',it:[['me',42,40,{p:'stand'}],['crowd',0,48,{n:16}],['ballot',60,30]],fx:'redflash',m:c=>ek(c,['1993'])},
+{id:'h_jishasa',pr:42,cap:'自社さ連立で政権へ戻る道を探る',bg:'ryotei',it:[['me',30,40,{p:'shake'}],['e',50,40,{p:'shake'}]],m:c=>ek(c,['1994'])},
+{id:'h_hanshin',pr:43,cap:'阪神・淡路大震災。被災地へ',bg:'disaster',it:[['me',40,44,{p:'stand',su:'#3a5f8f'}],['helmet',42,24],['rubble',60,46]],fx:'gloom',m:c=>ek(c,['1995'])},
+{id:'h_okinawa',pr:42,cap:'沖縄の基地負担をめぐる協議',bg:'rural',it:[['me',40,44,{p:'talk'}],['plane',0,8]],m:c=>ek(c,['1996'])},
+{id:'h_kinyu',pr:42,cap:'金融機関の破綻が相次ぐ',bg:'night',it:[['me',40,44,{p:'sad'}],['chart',62,40,{dn:1}]],fx:'rainfx',m:c=>ek(c,['1997.5'])},
+{id:'h_shuhen',pr:42,cap:'安全保障の法整備を審議',bg:'chamber',it:[['me',42,40,{p:'talk'}],['flag',76,44]],m:c=>ek(c,['1999','2001.5','2003','2015.5'])},
+{id:'h_rachi',pr:42,cap:'拉致被害者の帰国。羽田空港で出迎える',bg:'airport',it:[['me',30,44,{p:'stand'}],['crowd',48,46,{n:6}]],m:c=>ek(c,['2002.5'])},
+{id:'h_yusei',pr:43,cap:'郵政解散。刺客と造反の総選挙へ',bg:'station',it:[['me',40,44,{p:'mic',tas:1}],['car',58,46]],m:c=>ek(c,['2005.5'])},
+{id:'h_kokumin',pr:42,cap:'憲法改正の国民投票法が成立',bg:'chamber',it:[['me',42,40,{p:'hold'}],['book',60,30]],m:c=>ek(c,['2007'])},
+{id:'h_lehman',pr:42,cap:'リーマン・ショック。株価が急落',bg:'night',it:[['me',40,44,{p:'sad'}],['chart',62,40,{dn:1}],['tv',6,40]],m:c=>ek(c,['2009'])},
+{id:'h_kotai',pr:43,cap:'政権交代。自民党は野党の席へ',bg:'chamber',it:[['me',20,40,{p:'sad'}],['crowd',40,48,{n:9}]],fx:'gloom',m:c=>ek(c,['2009.5'])},
+{id:'h_311',pr:43,cap:'東日本大震災。被災地で支援にあたる',bg:'disaster',it:[['me',40,44,{p:'stand',su:'#3a5f8f'}],['helmet',42,24],['shovel',56,44],['rubble',64,46]],fx:'snow',m:c=>ek(c,['2011'])},
+{id:'h_moritomo',pr:42,cap:'公文書をめぐる問題で国会が紛糾',bg:'lobby',it:[['me',42,46,{p:'hold'}],['docs',58,46],['camera',10,46]],fx:'flash',m:c=>ek(c,['2017'])},
+{id:'h_reiwa',pr:42,cap:'「令和」の時代が始まる',bg:'sakura',it:[['me',42,44,{p:'stand',smile:1}],['flag',72,44]],fx:'petals',m:c=>ek(c,['2019.5'])},
+{id:'h_corona',pr:43,cap:'新型コロナ。マスク姿で対策を協議',bg:'meeting',it:[['me',42,40,{p:'talk'}],['mask',46,24],['a',14,40],['mask',18,24],['syringe',68,28]],m:c=>ek(c,['2020','2021'])},
+{id:'h_abe',pr:43,cap:'元首相の銃撃事件。献花台に花を手向ける',bg:'town',it:[['bouquet',30,44],['bouquet',38,44],['me',54,44,{p:'bow'}]],fx:'gloom',m:c=>ek(c,['2022.5'])},
+{id:'h_kodomo',pr:42,cap:'こども家庭庁の発足',bg:'town',it:[['me',40,44,{p:'wave'}],['h',60,44,{p:'wave'}]],fx:'sparkle',m:c=>ek(c,['2023'])},
+{id:'h_urakin',pr:43,cap:'派閥の政治資金問題。記者に囲まれる',bg:'lobby',it:[['me',42,46,{p:'bow'}],['camera',10,46],['camera',74,46,{l:1}],['mics',28,32]],fx:'flash',m:c=>ek(c,['2023.5'])},
+{id:'h_noto',pr:43,cap:'能登半島地震。雪の中の被災地へ',bg:'disaster',it:[['me',40,44,{p:'stand',su:'#3a5f8f'}],['helmet',42,24],['rubble',60,46]],fx:'snow',m:c=>ek(c,['2024'])},
+{id:'h_shosu',pr:42,cap:'少数与党の国会。野党との政策協議',bg:'meeting',it:[['me',30,40,{p:'talk'}],['e',60,40,{p:'talk'}]],m:c=>ek(c,['2025'])},
+{id:'h_takaichi',pr:42,cap:'高市内閣のもとで迎えた総選挙',bg:'station',it:[['me',40,44,{p:'mic',tas:1}],['crowdcheer',56,48,{n:6}]],m:c=>ek(c,['2026'])},
+/* 浪人中 */
+{id:'r_gaito',pr:45,cap:'浪人中。朝の駅前で街頭演説',bg:'station',it:[['me',40,44,{p:'mic'}],['crowd',60,46,{n:5}]],fx:'sparkle',m:c=>c.out&&/街頭|駅前/.test(c.ot)},
+{id:'r_koen',pr:45,cap:'浪人中。後援会を一軒ずつ回る',bg:'rural',it:[['me',40,44,{p:'bow'}],['g',60,44,{p:'stand'}]],m:c=>c.out&&/後援会|女性部|決起/.test(c.ot)},
+{id:'r_koshi',pr:45,cap:'浪人中。大学で教壇に立つ',bg:'meeting',it:[['me',42,40,{p:'point'}],['f',12,44],['h',70,44]],m:c=>c.out&&/講師/.test(c.ot)},
+{id:'r_tv',pr:45,cap:'浪人中。コメンテーターとして出演',bg:'studio',it:[['me',40,30,{p:'talk'}]],fx:'spot',m:c=>c.out&&/コメンテーター/.test(c.ot)},
+{id:'r_party',pr:45,cap:'浪人中。資金集めのパーティー',bg:'hall',it:[['me',42,44,{p:'bow'}],['crowd',62,46,{n:5}]],m:c=>c.out&&/パーティー/.test(c.ot)},
+{id:'r_fac',pr:45,cap:'浪人中。派閥の会長に支援を願い出る',bg:'ryotei',it:[['b',30,40,{p:'talk'}],['me',58,40,{p:'bow'}],['money',44,32]],m:c=>c.out&&/派閥/.test(c.ot)},
+{id:'r_shucho',pr:44,cap:'浪人中。地元の首長と手を組む',bg:'town',it:[['g',30,44,{p:'shake'}],['me',48,44,{p:'shake'}]],m:c=>c.out&&/首長|地方議員/.test(c.ot)},
+{id:'r_rest',pr:44,cap:'浪人中。静かに落選の原因を見つめ直す',bg:'home',it:[['me',42,42,{p:'write'}],['book',58,38]],m:c=>c.out&&/休養/.test(c.ot)},
+{id:'r_gen',pr:40,cap:'浪人中。たすきを掛けて地元を歩く',bg:'rural',it:[['me',42,44,{p:'wave'}]],m:c=>c.out},
+{id:'reti',pr:40,cap:'引退後の日々。後進に助言を送る',bg:'home',it:[['me',40,42,{p:'talk'}],['a',62,42,{p:'bow'}],['sake',54,36]],m:c=>c.ret},
+/* 追加の活動 */
+{id:'m_jimoto',pr:32,cap:'地元回り。後援会の集会であいさつ',bg:'rural',it:[['me',40,44,{p:'wave'}],['crowd',58,46,{n:5}]],m:c=>c.mu.some(x=>/地元回り/.test(x))},
+{id:'m_party',pr:32,cap:'政治資金パーティーで資金集め',bg:'hall',it:[['podium',40,44],['me',42,32,{p:'talk'}],['crowd',2,48,{n:6}],['coins',62,30]],m:c=>c.mu.some(x=>/パーティー/.test(x))},
+{id:'m_shitsumon',pr:32,cap:'夜遅くまで国会質問の準備',bg:'office',it:[['me',40,40,{p:'write'}],['docs',56,32],['moon',12,14]],fx:'night',m:c=>c.mu.some(x=>/質問/.test(x))},
+{id:'m_benkyo',pr:31,cap:'党の勉強会に参加',bg:'meeting',it:[['me',40,40,{p:'write'}],['b',66,40,{p:'talk'}]],m:c=>c.mu.some(x=>/勉強会/.test(x))},
+{id:'m_reikai',pr:31,cap:'派閥の例会に顔を出す',bg:'ryotei',it:[['me',30,40,{p:'stand'}],['b',56,40,{p:'talk'}],['sake',46,32]],m:c=>c.mu.some(x=>/例会|挨拶回り/.test(x))},
+{id:'m_paken',pr:31,cap:'派閥のパーティー券を売りさばく',bg:'town',it:[['me',40,44,{p:'hold'}],['envelope',52,36],['e',62,44]],m:c=>c.mu.some(x=>/パーティー券/.test(x))},
+{id:'m_wakate',pr:31,cap:'派閥の若手の面倒を見る',bg:'ryotei',it:[['me',30,40,{p:'talk'}],['f',54,40,{p:'bow'}],['h',70,40,{p:'bow'}]],m:c=>c.mu.some(x=>/若手/.test(x))},
+{id:'m_takou',pr:31,cap:'他党の議員と会食で交流',bg:'ryotei',it:[['me',30,40,{p:'talk'}],['e',58,40,{p:'talk'}],['sake',46,32]],m:c=>c.mu.some(x=>/他党|他派閥/.test(x))},
+/* お金・ステータス */
+{id:'s_rich',pr:30,cap:'政治資金が大きく増えた',bg:'office',it:[['me',40,44,{p:'cheer'}],['money',60,44],['money',70,44]],fx:'sparkle',m:c=>c.dm>=8},
+{id:'s_broke',pr:30,cap:'政治資金が底をつきかけている',bg:'home',it:[['me',40,42,{p:'sad'}],['money',60,40]],fx:'gloom',m:c=>s.st.m<=2&&!c.ret},
+{id:'s_kname',pr:29,cap:'知名度がぐんと上がった',bg:'studio',it:[['me',40,30,{p:'wave'}],['star',62,14]],fx:'spot',m:c=>c.ds('k')>=4},
+{id:'s_jiban',pr:29,cap:'地元の支持が広がる',bg:'rural',it:[['me',40,44,{p:'wave'}],['arrowup',62,40]],m:c=>c.ds('b')>=4},
+{id:'s_seisaku',pr:29,cap:'政策の実績を積み上げる',bg:'office',it:[['me',40,44,{p:'hold'}],['chart',60,40]],m:c=>c.ds('p')>=4},
+{id:'s_down',pr:28,cap:'ステータスが落ち込み、苦しいターン',bg:'rain',it:[['me',42,44,{p:'sad'}],['arrowdn',60,40]],fx:'rainfx',m:c=>['b','i','k','n','p'].some(k=>c.ds(k)<=-4)},
+/* 政策課題の分野 */
+{id:'g_kei',pr:20,cap:'経済政策の議論に加わる',bg:'meeting',it:[['me',40,40,{p:'point'}],['chart',62,32]],m:c=>/経済|財政|税|賃上げ|景気/.test(c.et)},
+{id:'g_gai',pr:20,cap:'外交・安全保障の議論',bg:'kantei',it:[['me',40,44,{p:'talk'}],['flag',70,44]],m:c=>/外交|安全保障|防衛|近隣国|同盟/.test(c.et)},
+{id:'g_sha',pr:20,cap:'社会保障の現場を視察',bg:'hospital',it:[['me',40,44,{p:'talk'}],['g',62,44,{p:'stand'}]],m:c=>/社会保障|年金|医療|介護/.test(c.et)},
+{id:'g_chi',pr:20,cap:'地方の声を聞いて回る',bg:'rural',it:[['me',40,44,{p:'talk'}],['g',62,44],['rice',8,44]],m:c=>/地方|農業|食料|人口減少|自治体/.test(c.et)},
+{id:'g_kane',pr:20,cap:'政治とカネの議論',bg:'paper',it:[['me',72,44,{p:'hold'}]],m:c=>/政治資金|選挙制度|政治改革/.test(c.et)},
+{id:'g_ene',pr:20,cap:'エネルギー政策を議論',bg:'rural',it:[['me',40,44,{p:'point'}],['sun',70,14]],m:c=>/エネルギー|原子力/.test(c.et)},
+{id:'g_kyo',pr:20,cap:'教育の現場を訪ねる',bg:'town',it:[['me',40,44,{p:'talk'}],['f',60,44,{p:'stand'}],['book',74,40]],m:c=>/教育/.test(c.et)},
+{id:'g_ken',pr:20,cap:'憲法と国のかたちを語る',bg:'chamber',it:[['me',42,40,{p:'talk'}],['book',62,30]],m:c=>/憲法/.test(c.et)},
+{id:'g_tou',pr:20,cap:'党改革の議論に加わる',bg:'hq',it:[['me',40,44,{p:'talk'}],['f',62,44]],m:c=>/党改革|国会改革|若手/.test(c.et)},
+{id:'g_sai',pr:20,cap:'防災の現場を視察',bg:'flood',it:[['me',40,44,{p:'point'}],['helmet',42,24]],m:c=>/災害|防災/.test(c.et)},
+/* 役職ごとの日常 */
+{id:'d_pm',pr:15,cap:'官邸の執務室で政務にあたる',bg:'kantei',it:[['me',40,44,{p:'write'}],['docs',56,40]],m:c=>c.pm},
+{id:'d_sp',pr:15,cap:'議長として本会議を進行',bg:'chamber',it:[['podium',40,22],['me',42,14,{p:'stand'}],['gavel',62,22]],m:c=>posIs(c,['sp','dp'])},
+{id:'d_gov',pr:14,cap:'霞が関で役所の仕事にあたる',bg:'office',it:[['me',40,40,{p:'write'}],['docs',56,32],['a',74,44]],m:c=>!!c.pos.g},
+{id:'d_hq',pr:14,cap:'党本部で党務にあたる',bg:'hq',it:[['me',40,44,{p:'hold'}],['phone',60,40]],m:c=>posIs(c,['sec','so3','pr6','sk3','so2','pr5','sk1','sk2','so1'])},
+{id:'d_kt',pr:14,cap:'国会の廊下を駆け回る',bg:'lobby',it:[['me',36,46,{p:'run'}],['docs',60,46]],m:c=>posIs(c,['kt1','kt2','kt3','kt4','kt5'])},
+/* 季節(当てはまるものがないとき) */
+{id:'z_spring',pr:5,cap:'春。予算の成立と桜の季節',bg:'sakura',it:[['me',40,44,{p:'wave'}]],fx:'petals',m:c=>c.h==0&&c.y%2==0},
+{id:'z_winter',pr:5,cap:'冬。年明けの通常国会が始まる',bg:'diet',it:[['me',40,46,{p:'stand'}]],fx:'snow',m:c=>c.h==0},
+{id:'z_summer',pr:5,cap:'夏。地元の夏祭りと花火',bg:'fireworks',it:[['me',40,44,{p:'wave'}],['lantern',14,30],['lantern',76,30]],m:c=>c.h==1&&c.y%2==0},
+{id:'z_autumn',pr:5,cap:'秋。臨時国会と稲刈りの季節',bg:'rural',it:[['me',40,44,{p:'wave'}],['rice',8,44],['rice',64,44]],fx:'leaves',m:c=>c.h==1},
+{id:'z_diet',pr:1,cap:'国会議事堂へ登院',bg:'diet',it:[['me',40,46,{p:'wave'}]],m:c=>true}];
+function pickVig(c){let best=-1,cand=[];VIG.forEach(v=>{let ok=false;try{ok=v.m(c)}catch(e){}if(!ok)return;if(v.pr>best){best=v.pr;cand=[v]}else if(v.pr==best)cand.push(v)});return cand.length?cand[tno()%cand.length].id:'z_diet'}
+/* ---- アニメーション ---- */
+let vigT=null,vigF=0;
+function vigStart(){const cv=document.getElementById('vigc');if(vigT){clearInterval(vigT);vigT=null}if(!cv||!s||!s.vig)return;const v=VIG.find(x=>x.id==s.vig);if(!v)return;
+ let still=false;try{still=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+ const step=()=>{if(!document.body.contains(cv)){clearInterval(vigT);vigT=null;return}try{vDraw(cv,v,vigF++)}catch(e){clearInterval(vigT);vigT=null}};step();if(!still)vigT=setInterval(step,180)}
+const vigHtml=()=>{if(!s||!s.vig)return'';const v=VIG.find(x=>x.id==s.vig);if(!v)return'';return `<figure class=vig><canvas id=vigc width=96 height=48 role=img aria-label="${esc(v.cap)}"></canvas><figcaption>${esc(v.cap)}</figcaption></figure>`};
+
 /* ===== 画面 ===== */
 const bar=(v,c)=>`<div class=gg><i style="width:${cl(0,100,v)}%;${c?'background:'+c:''}"></i></div>`;
 const lv=v=>v>=70?'高い':v>=40?'普通':v>=15?'低め':'低い';
@@ -792,7 +1120,7 @@ function cs(i){s.stc[i]=((s.stc[i]||0)+1)%3;lg(POL[i]+'の方針を「'+POV[s.st
 function turn(){if(s.end)return end();let e=cur(),k=String(ky()),L='ABCDEF',jc=jobCard(),ic=incCard(),x=exp(e),ps=posList(s.pos).join('・')||'なし',hist=/^史実/.test(e.f||''),est=/^推定/.test(e.f||'');
  let h='';
  if(!s.res&&s.log.length<4)h+=`<section class="cd intro"><h3>ゲーム開始:${Math.floor(s.y0||1980)}年</h3><p>${tag('史実')} ${esc(stS()[3])}</p><p>あなたは初当選した自民党の衆議院議員です。所属は<b>${fnm(s.fac)}</b>、選挙区は<b>${esc(dname())}</b>。初当選と同時に<b>${esc(s.first||'—')}</b>に就きました(ゲーム上の配属)。</p><p class=mu>下の課題を読み、A〜Dから1つ選んで「決定」すると半年進みます。役職は「党内人事」「政府・内閣」タブで希望を出せます。</p></section>`;
- if(s.chg&&s.chg.length)h+=`<details class="cd chg" open><summary><b>前のターンからの変化</b></summary><ul class=ls>${s.chg.map(t=>`<li>${esc(t).replace(/\[史実\]/,tag('史実')).replace(/\[IF\]/,tag('IF'))}</li>`).join('')}</ul></details>`;
+ if(s.chg&&s.chg.length)h+=`<details class="cd chg" open><summary><b>前のターンからの変化</b></summary>${vigHtml()}<ul class=ls>${s.chg.map(t=>`<li>${esc(t).replace(/\[史実\]/,tag('史実')).replace(/\[IF\]/,tag('IF'))}</li>`).join('')}</ul></details>`;
  if(s.res)h+=`<details class=cd><summary><b>数値の変動</b>(${s.res.length}件)</summary><ul class=ls>${s.res.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></details>`;
  h+=tipUI();
  if(s.out&&!s.ret&&E[k])h+=`<details class=cd><summary><b>その頃の国政</b> ${tag('史実')}${esc(E[k].t)}</summary><p>${esc((EX[k]||[E[k].f])[0])}</p><p class=mu>${esc(E[k].f||'')}</p></details>`;
@@ -809,7 +1137,10 @@ ${e.sel?(e.dir!=null?`<div class=al>${e.ifsel?'':tag('史実')}派閥(${fnm(s.fa
 ${(()=>{let bs=blks(e.o),ab=false;return e.o.map((o,i)=>{let b=bs[i];return `<label class="o${s.pick===i?' sel':''}${b.length?' dis':''}"><input type=radio name=q ${s.pick===i?'checked':''} ${b.length?'disabled':''} onclick="pk(${i})"><span class=lt>${L[i]}</span><span class=ot><span>${esc(o[0])}</span>${hint(o[1])}${b.length?`<span class=xn>選べません:${b.join('・')}が0です</span>`:''}</span></label>`}).join('')+(ab?'<p class=nt>すべての選択肢で0のステータスが下がるため、今回は特例ですべて選べます。</p>':'')})()}
 <p class=nt>※矢印は主な影響の方向です。実際の結果は情勢や運で変わります。</p></section>`;
  if(jc)h+=`<section class="cd job"><h3>${esc(jc.t)} <small>(1つ選択)</small></h3><p class=mu>役職に就いている間は、毎ターンその立場ならではの行動を選べます。</p>${optList('jc',jc.o,s.jpick,'jp')}</section>`;
- if(isE(k)&&!s.ret)h+=`<section class=cd><h3>選挙戦略 <small>(1つ選択)</small></h3>${(()=>{if(STG[s.stg||0][2]>0&&s.st.m<=0)s.stg=6;return STG.map((g,i)=>{let d=g[2]>0&&s.st.m<=0;return `<label class="o${(s.stg||0)==i?' sel':''}${d?' dis':''}"><input type=radio name=sg ${(s.stg||0)==i?'checked':''} ${d?'disabled':''} onclick="s.stg=${i};R()"><span class=ot><span><b>${g[0]}</b> <small>${g[2]?'資金-'+g[2]:'資金なし'}</small></span><span class=hn><i class=nt>${g[1]}</i></span>${d?'<span class=xn>選べません:政治資金が0です</span>':''}</span></label>`}).join('')})()}</section>`;
+ if(isE(k)&&!s.ret)h+=(()=>{if(!stgOK(s.stg||0))s.stg=STG.length-1;let bc=bCost(),sp=supp(),sz=sp.L.reduce((a,x)=>a+x.z,0)+(s.out?.05:0)-(s.st.m<bc?.03:0),pc=v=>(v>=0?'+':'')+Math.round(v*100)+'%';
+ return `<section class=cd><h3>選挙戦略 <small>(1つ選択)</small></h3><p class=nt>どの戦略でも、選挙費用(事務所・ポスター・運動員など)として政治資金${bc}が自動でかかります${s.st.m<bc?'。<b class=wn>いまは足りないため、当選見込みが3%下がります</b>':''}。戦略の費用はこれに加えてかかります(いまの政治資金:${s.st.m})。</p>${STG.map((g,i)=>{let d=!stgOK(i),x=STGX[i],zv=x.z(),af=x.after?hint(x.after):'',est=Math.round(winP(zv+sz)*100);
+  return `<label class="o${(s.stg||0)==i?' sel':''}${d?' dis':''}"><input type=radio name=sg ${(s.stg||0)==i?'checked':''} ${d?'disabled':''} onclick="s.stg=${i};R()"><span class=ot><span><b>${g[0]}</b> <small>${esc(g[1])}</small></span><span class=hn><i class=dn>費用 政治資金↓${g[2]+bc}${g[2]?'(選挙費用'+bc+'+戦略'+g[2]+')':'(選挙費用のみ)'}</i><i class=${zv>=0?'up':'dn'}>当選見込み${pc(zv)}</i></span>${x.after?`<span class=nt>選挙後:</span>${af}`:''}<span><b>この戦略での当選見込み:約${est}%</b> <small>(応援などを含む)</small></span>${d?`<span class=xn>選べません:政治資金が足りません(必要${g[2]+bc})</span>`:''}</span></label>`}).join('')}</section>
+<section class=cd><h3>選挙の応援 <small>(自動)</small></h3>${sp.L.length?`<ul class=ls>${sp.L.map(x=>`<li><b>${esc(x.w)}</b>が応援に入ります:当選見込み+${Math.round(x.z*100)}% <small class=mu>(${x.c})</small></li>`).join('')}</ul>`:'<p class=mu>今回は応援に入る人がいません。</p>'}${s.out?'<p>浪人中の捲土重来の戦い:当選見込み+5%</p>':''}${sp.nx.length?`<h4>条件を満たせば入る応援</h4><ul class=ls>${sp.nx.map(x=>`<li>${esc(x.w)}:当選見込み+${Math.round(x.z*100)}% <small class=mu>(${x.c})</small></li>`).join('')}</ul>`:''}<p class=nt>応援の条件は当選回数で変わります(1〜3期・4〜6期・7期以上)。${isPrez()?'総裁のあなたには、政権幹部の応援は入りません。':''}${s.left?'離党中のため、党や派閥の応援はありません。':''}</p></section>`})();
  h+=(()=>{let row=i=>{let m=M[i],on=s.mul.includes(i),b=on?[]:mBl(i);return `<label class="o${on?' sel':''}${b.length?' dis':''}"><input type=checkbox ${on?'checked':''} ${b.length?'disabled':''} onclick="tg(${i})"><span class=ot><span>${m[0]}</span>${hint(m[1],m[4])}${b.length?`<span class=xn>選べません:${b.join('・')}</span>`:''}</span></label>`},gi=M.map((m,i)=>i).filter(i=>M[i][2]!='f'&&mAvail(i)),fi=M.map((m,i)=>i).filter(i=>M[i][2]=='f'&&mAvail(i));
  return `<section class=cd><h3>追加の活動 <small>(任意・2つまで選べます／いま${s.mul.length}つ選択中)</small></h3>${s.mul.length?`<div class=row><button class=sm2 onclick="tg(-1)">追加の活動をすべて外す</button></div>`:''}<h4>議員としての活動</h4>${gi.map(row).join('')}<h4>派閥の活動 ${s.fac<5?`<small>(${esc(fnm(s.fac))})</small>`:''}</h4>${fi.length?fi.map(row).join(''):`<p class=nt>${s.left?'離党中のため派閥の活動はできません。':s.fac==5?'無派閥のため派閥の活動はありません。「派閥」タブから派閥に入れます。':'いまは派閥の活動ができません。'}</p>`}<p class=nt>表示の数値は、選んだ難易度での増減の目安です(同じ項目の増減は差し引きした結果だけを表示)。ステータスが80以上のときは伸びが小さくなります。</p></section>`})();
  h+=`<div class=db><div class=ds>${(()=>{let nd=[];if(s.pick==null)nd.push('政策課題');if(jc&&s.jpick==null)nd.push('役職の仕事');if(ic&&s.ipick==null)nd.push('出来事');if(s.fev&&s.fpick==null)nd.push('派閥の選択');return nd.length?`<b class=wn>未選択:${nd.join('・')}</b>`:`選択:<b>${L[s.pick]}</b>${jc?` ＋ 仕事${L[s.jpick]}`:''}${ic?` ＋ 出来事${L[s.ipick]}`:''}${s.mul.length?` ＋ ${s.mul.map(i=>M[i][0]).join('・')}`:''}${isE(k)&&!s.ret?` ＋ ${STG[s.stg||0][0]}`:''}`})()}</div>${s.pick!=null||s.jpick!=null||s.ipick!=null?`<button class=sm2 onclick="s.pick=null;s.jpick=null;s.ipick=null;s.fpick=null;s.mul=[];R()">取消</button>`:''}<button class=go ${s.pick==null||(jc&&s.jpick==null)||(ic&&s.ipick==null)||(s.fev&&s.fpick==null)?'disabled':''} onclick="sub()">決定して半年進む</button></div>`;
@@ -824,7 +1155,7 @@ function end(){let r=s.endReason||'引退',dead=r=='病死',hist=s.log.filter(l=
 /* 3. 選挙 */
 function elec(){let o=pfo(s.pf);
  let h=`<section class=cd><h3>次の衆議院総選挙</h3><div class=kv><span>時期</span><b>${eLabel()}</b><span>次の参院選</span><b>${uLabel()}</b><span>選挙制度</span><b>${eNext().k<1995?'中選挙区制(1選挙区から複数人が当選。あなたの区の定数は'+mdm()+'・ゲーム上の目安)':'小選挙区比例代表並立制(1994年の政治改革関連法)'}</b><span>あなたの選挙区</span><b>${esc(dname())}</b></div>
-<p class=mu>当選の見込みはおもに地元地盤で決まります。地元地盤が高ければ党の風に左右されず安定して当選でき、低いと党勢しだいで当落が分かれます。知名度・政治資金・選挙戦略も影響します。<b>いまの当選の見込み:約${s.out||s.ret?'—':Math.round(winP(0)*100)+'%'}</b>(党勢${s.w>0?'+':''}${s.w}・地元地盤${s.st.b}の場合)。小選挙区で負けても、惜敗率が高ければ比例代表で復活当選できます(1996年以降)。</p></section>`;
+<p class=mu>当選の見込みはおもに地元地盤で決まります。地元地盤が高ければ党の風に左右されず安定して当選でき、低いと党勢しだいで当落が分かれます。知名度・政治資金・選挙戦略も影響します。<b>いまの当選の見込み:約${s.ret?'—':Math.round(winP(suppZ()+(s.out?.05:0))*100)+'%'}</b>(党勢${s.w>0?'+':''}${s.w}・地元地盤${s.st.b}・自動の応援を含み、選挙戦略は含まない場合)。小選挙区で負けても、惜敗率が高ければ比例代表で復活当選できます(1996年以降)。</p></section>`;
  if(!s.ret)h+=`<details class=cd><summary><b>選挙区を変更する</b></summary><p class=mu>国替えすると地元地盤が6割下がります。</p><div class=row><select id=mpf onchange="fillDn('mdn',this.value,1)">${PF.map(p=>`<option${p.n==s.pf?' selected':''}>${p.n}</option>`).join('')}</select><select id=mdn></select><button onclick="moveDist()">この選挙区に移る</button></div></details>`;
  h=(s.msg?`<div class=al>${esc(s.msg)}</div>`:'')+h+etimeUI()+`<section class=cd><h3>自民党の議席の推移</h3>${seatChart()}</section>`;h+=`<h3 class=sh>総選挙の結果</h3>`;
  if(!s.elec.length)h+='<p class=mu>まだ総選挙は行われていません。最初は1983年後半です。</p>';
@@ -1164,7 +1495,7 @@ function rm(){let m=$('modal');if(!m)return;if(!modal){m.innerHTML='';m.classNam
 
 function R(){const A=$('app');if(!s){A.innerHTML=setup();fillDn('dn','東京都',1);pv();return}
  A.innerHTML=hd()+`<main class="${tab==1&&!s.end?'pb':''}">`+[dash,turn,elec,party,fac,gov,diet,car,tl,sv][tab]()+'</main>';
- if(tab==0)drawChar($('cv'),look());if($('cv2'))drawChar($('cv2'),look());if(tab==2&&$('mdn'))fillDn('mdn',s.pf,s.dn);_lt=tno()}
+ if(tab==0)drawChar($('cv'),look());if($('cv2'))drawChar($('cv2'),look());if(tab==2&&$('mdn'))fillDn('mdn',s.pf,s.dn);_lt=tno();try{vigStart()}catch(e){}}
 /* ===== 音(Web Audioでその場で合成。外部ファイルなし、曲はこのゲーム用のオリジナル) ===== */
 let SND={on:false,bgm:true,se:true,vol:.6,rep:true},AC=null,MG=null,seq={tr:null,step:0,next:0};
 try{Object.assign(SND,JSON.parse(localStorage.getItem('ng_snd')||'{}'))}catch(e){}
