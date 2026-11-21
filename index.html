@@ -289,7 +289,10 @@ const POL=['外交安保','経済','社会保障','憲法','地方自治'],POV=[
 const STG=[['地元密着型','後援会と地域回りで地元の票を固める',4],['政策重視型','これまでの政策の実績を訴える',3],['無党派層への訴求','街頭演説やメディアで広く支持を呼びかける',5],['組織票・資金重視','業界団体と資金力で票を固める',8],['新人候補への応援','周辺区の新人を応援して党内の評価を上げる',5],['資金をかけない選挙','手弁当の運動員だけで戦う',0]];
 /* 戦略ごとの当選見込みへの加算(z)・計算式の説明(f)・選挙後の効果(after) */
 const STGX=[{z:()=>.04,f:'当選見込み+4%',after:''},{z:()=>.03,f:'当選見込み+3%',after:''},{z:()=>.05,f:'当選見込み+5%',after:''},{z:()=>.08,f:'当選見込み+8%',after:''},{z:()=>0,f:'自分の選挙への上乗せはなし',after:'i5,n5,f5'},{z:()=>0,f:'上乗せはなし(費用もかからない)',after:''}];
-const bCost=()=>eNext().k<1995?4:3;
+/* 選挙制度:esys='mid'(中選挙区制を維持)/'ldp'(自民党案の並立制・小選挙区300+比例171)/'hist'または未設定(史実の並立制) */
+const isMid=k=>(s&&s.esys=='mid')||+k<1995;
+const sysName=k=>isMid(k)?'中選挙区制':s&&s.esys=='ldp'?'小選挙区比例代表並立制(IF:自民党案・小選挙区300+比例171)':'小選挙区比例代表並立制(1994年の政治改革関連法)';
+const bCost=()=>isMid(eNext().k)?4:3;
 const stgOK=i=>!!STG[i]&&!STG[i][2]||!!STG[i]&&s.st.m>=STG[i][2]+bCost();
 const isPrez=()=>s.pos.g=='pm'||!!(s.prez&&s.prez.n==s.name);
 /* 選挙の応援(自動)。L=応援に入る人、nx=条件を満たしていない応援 */
@@ -467,7 +470,7 @@ const STARTS=[[1980,'1980年6月22日','第36回総選挙(衆参同日選挙)','
 [2021.5,'2021年10月31日','第49回総選挙','岸田内閣のもとで自民党は単独過半数を維持し、第2次岸田内閣が発足しました。'],
 [2024.5,'2024年10月27日','第50回総選挙','派閥の政治資金問題の逆風で自民党は大敗。公明党と合わせても過半数に届かず、第2次石破内閣は少数与党として発足しました。'],
 [2026,'2026年2月8日','第51回総選挙','高市早苗首相のもとでの解散総選挙で自民党が大勝し、政権の基盤を固めました。']];
-let SK0=1980;const VER='第27版・2026年11月22日更新';
+let SK0=1980;const VER='第29版・2026年11月22日更新';
 /* 史実の幹事長と所属派閥(系譜の番号。-1=系譜外・無派閥)。英語版ウィキペディア「Secretary-General of the Liberal Democratic Party」の就任年月と各議員の所属派閥で確認 */
 const SECF=[[1980,3,'櫻内義雄'],[1981.5,0,'二階堂進'],[1983.5,2,'田中六助'],[1984.5,0,'金丸信'],[1986.5,0,'竹下登'],[1987.5,1,'安倍晋太郎'],[1989,0,'橋本龍太郎'],[1989.5,0,'小沢一郎'],[1991,0,'小渕恵三'],[1991.5,0,'綿貫民輔'],[1992.5,0,'梶山静六'],[1993.5,1,'森喜朗'],[1995.5,2,'加藤紘一'],[1998.5,1,'森喜朗'],[2000,0,'野中広務'],[2000.5,2,'古賀誠'],[2001,-1,'山崎拓'],[2003.5,1,'安倍晋三'],[2004.5,-1,'武部勤'],[2006.5,1,'中川秀直'],[2007.5,3,'伊吹文明'],[2008.5,1,'細田博之'],[2009.5,4,'大島理森'],[2010.5,-1,'石原伸晃'],[2012.5,-1,'石破茂'],[2014.5,-1,'谷垣禎一'],[2016.5,3,'二階俊博'],[2021.5,0,'茂木敏充'],[2024.5,-1,'森山裕'],[2025.5,4,'鈴木俊一']];
 const secAt=t=>{if(t>=2027.5)return null;let r=null;for(const e of SECF)if(e[0]<=t)r=e;return r};
@@ -501,31 +504,32 @@ function uLabel(){let t=uNext(),k=String(t);return UD[k]?UD[k]+'(史実の日程
 function blk(ef){ef=nef(ef);return [...new Set(((ef||'').match(/[a-z]-\d+/g)||[]).filter(x=>K[x[0]]&&s.st[x[0]]<=0&&!(x[0]=='k'&&/(^|,)m\d/.test(ef||''))).map(x=>K[x[0]]))]}
 const allBlk=e=>e.o.every(o=>blk(o[1]).length);
 const isU=k=>(k in UH)||(+k>2025.5&&(+k-2025.5)%3==0);
-const seatsN=k=>+k<1986?511:+k<1993?512:+k<1996?511:+k<2000?500:+k<2014?480:+k<2017?475:465;
+const seatsN=k=>s&&s.esys=='mid'&&+k>=1993?511:s&&s.esys=='ldp'&&+k>=1995?471:+k<1986?511:+k<1993?512:+k<1996?511:+k<2000?500:+k<2014?480:+k<2017?475:465;
 const posList=o=>[o.p,o.g,o.d,o.f].filter(x=>x).map(pname);
 const pfo=n=>PF.find(p=>p.n==n)||PF[12];
 const dif=()=>s.dif==null?1:s.dif;
-function dname(){let b=s.dn?`${s.pf}第${s.dn}区`:(s.dist||'選挙区');return b+(lastE()<1995?'(中選挙区制)':'')}
+function dname(){let b=s.dn?`${s.pf}第${s.dn}区`:(s.dist||'選挙区');return b+(isMid(lastE())?'(中選挙区制)':'')}
 function lg(t,k,x){s.log.push(Object.assign({y:s.y,h:s.h,t,k},x||{}))}
 function toast(m){let t=$('toast');if(!t)return;t.textContent=m;t.className='show';clearTimeout(toastT);toastT=setTimeout(()=>t.className='',2800)}
 
 /* 首相表示: 主人公が首相ならIF、他候補のIF勝利は次の史実交代まで */
 function pm(){let t=ky(),r=PM[0];for(let x of PM)if(x[0]<=t)r=x;
  if(s.pos.g=='pm')return s.name+'(IF)';
- const nlH=(t>=1993.5&&t<1994.5)||(t>=2009.5&&t<2012.5);
+ const nlH=(t>=1993.5&&t<1994.5)||(t>=2009.5&&t<=2012.5);
  if(!s.ruling){if(s.ogov&&s.ogov.hist&&nlH)return r[1];if(s.ogov&&s.ogov.leader)return s.ogov.leader+'('+s.ogov.party+'・IF)';return nlH?r[1]:'非自民の連立政権(IF)'}
  if(s.prez&&(s.ifTL||s.prez.since>=2027.5)&&s.prez.n!=s.name)return s.prez.n+'(IF)';
+ if(s.div)return '自民党総裁(IF)';
  if(s.ifpm&&s.ifpm.n!=s.name){let nx=PM.find(x=>x[0]>s.ifpm.k);if(!nx||t<nx[0])return s.ifpm.n+'(IF)'}
  if(nlH){let n0=t<2000?'宮澤喜一':'麻生太郎';if(t==1993.5||t==2009.5)return n0;return s.ldpBack?(t<2000?'河野洋平':'谷垣禎一')+'(IF:自民党が政権に復帰)':n0+'(IF:自民党政権が継続)'}
  return r[1]}
 
 /* そのターンの課題 */
-function cur(){let k=String(ky());if(!s.ret&&!s.end&&isE(k)&&age()>=75&&!s.ext)return YUT;if(s.ret)return RET;if(s.out)return ronE();if(s.left&&(hSel(k)||ifSelK(k)))return NOP;if(s.pos.d=='sp')return SP;if(E[k]&&(!ECOND[k]||ECOND[k](k)))return pmv(E[k]);
+function cur(){let k=String(ky());if(!s.ret&&!s.end&&isE(k)&&age()>=75&&!s.ext)return YUT;if(s.ret)return RET;if(s.out)return ronE();if(s.left&&(hSel(k)||ifSelK(k)))return NOP;if(s.pos.d=='sp')return SP;if(k=='1994'&&s.div&&s.div<1994&&s.ruling&&!s.esys&&!s.left)return EREF;if(E[k]&&(!ECOND[k]||ECOND[k](k))&&histOK(k))return pmv(E[k]);
  let SL=hSel(k)?SEL[k].split(','):ifSelK(k)?ifCands(k):null;
  if(SL){let n=SL,ifs=!hSel(k),o=n.map(x=>[x+'氏を支持し、派閥・同僚議員へ働きかける','']);
   if(canRun()&&!(s.pos.g=='pm'&&s.prez&&s.prez.n==s.name&&s.prez.cons>=tlim()))o.push([s.pos.g=='pm'?'現職の総裁として再選をめざし、派閥と同僚議員に支持を訴える':'自ら総裁選に立候補し、派閥と同僚議員に支持を訴える','']);
   let dr=fdir(k,n.length);if(dr!=null)o[dr]=[o[dr][0]+'(派閥の指示)',''];return{t:'自民党総裁選:誰を支持しますか',f:ifs?(s.selNow?'IF:総裁の辞任に伴う総裁選(ゲーム上の展開)':'IF:総裁の任期(3年)満了に伴う総裁選(ゲーム上の展開)'):'史実:'+n[0]+'氏が選出された。',sel:n,o,dir:dr,ifsel:ifs}}
- if(s.ruling&&s.minor&&!s.left&&tno()%3!=0)return pmv(MINOR[(tno()*5)%MINOR.length]);
+ {let st=sit(),t=tno();if(!s.left){if(st=='minor'&&t%3!=0)return pmv(MINOR[(t*5)%MINOR.length]);if(st=='opp'&&t%3!=0)return pmv(GOP[(t*5)%GOP.length]);if(st=='coal'&&t%3==1)return pmv(GCO[(t*3)%GCO.length]);if(st=='maj'&&t%4==1)return pmv(GMJ[(t*3)%GMJ.length])}}
  return pmv(gpick())}
 function exp(e){if(e.x)return e.x;let k=String(ky()),gi=G.indexOf(e);return EX[e.sel?'sel':e===SP?'sp':e===RET?'ret':gi>=0?'g'+gi:k]||[e.f||'','','']}
 
@@ -588,7 +592,7 @@ function moveDist(){let p=$('mpf').value,d=+$('mdn').value;if(p==s.pf&&d==s.dn)r
 function retire(){cRet=0;endGame('自らの決断による引退',null);toast('政界を引退しました');sfx('lose');R()}
 
 /* ===== 選挙 ===== */
-function elect(k,o){koninCheck(o);let en=eNext(),hk=en.hk!=null?String(en.hk):null,hs=hk?ELEC[hk]||0:0,est=!hs,st=s.st,N=seatsN(k),mid=+k<1995,g=s.stg||0,
+function elect(k,o){koninCheck(o);let en=eNext(),hk=en.hk!=null?String(en.hk):null,hs=hk?ELEC[hk]||0:0,est=!hs,st=s.st,N=seatsN(k),mid=isMid(k),g=s.stg||0,
  z=STGX[g]?STGX[g].z():0,
  sim=simSeats(k,en,hs,N),maj=Math.floor(N/2)+1,need=hk=='1993.5'&&en.kind=='hist'?240:Math.round(N*.4),
  rec={k,hs,sim,N,maj,mid,stg:STG[g][0],est,dt:en.kind=='hist'?ED[hk]||'':'',kind:en.kind,hk,hdt:hk?ED[hk]||'':''};rec.dev=en.kind=='hist'&&hs?sim-hs:0;
@@ -604,15 +608,16 @@ function elect(k,o){koninCheck(o);let en=eNext(),hk=en.hk!=null?String(en.hk):nu
   else{let mu=(p-.5)*40,mg=mu+R0(-8,8);if(win)mg=mg>0?mg:R0(1,3);else mg=mg<0?mg:-R0(1,3);mg=cl(-45,45,mg);let oth=R0(0,12),me=Math.round((100-oth)/2+mg/2),op=Math.round((100-oth)/2-mg/2);if(win&&me<=op)me=op+1;if(!win&&me>=op)op=me+1;rec.share=me;rec.op=op;rec.opn=(s.opp||(s.opp=fakeName()))+'(対立候補・IF人物)';rec.votes=Math.round(tot*me/100);rec.ov=Math.round(tot*op/100);rec.sek=Math.round(me/op*1000)/10;
    if(!win&&!s.left&&rec.sek>=(s.out?68:75)&&Math.random()<(s.out?.55:.45)+(rec.sek-75)/50){win=true;rv=true}}}
  let wasR=s.ruling,cp=coalAt(k,hk,en,N),tot2=sim+(cp?cp.seats:0);
- if(sim>=maj){s.ruling=true;s.coal=cp?cp.name:null}
+ if(sim>=maj){s.ruling=true;s.coal=cp&&!cp.opt?cp.name:null}
  else if(cp&&tot2>=maj){s.ruling=true;s.coal=cp.name;o.push('自民党は単独では過半数に届かず、'+cp.name+'との連立で過半数を確保しました')}
  else if(cp){let keep=en.kind=='hist'?!(hk=='1993.5'||hk=='2009.5'):Math.random()<Math.max(.1,.5-(maj-tot2)/N*3);s.ruling=keep;s.coal=keep?cp.name:null;o.push('自民党と'+cp.name+'の連立でも過半数に届きませんでした'+(keep?'。野党がまとまらず、少数与党として政権を維持しました':''))}
  else{s.ruling=false;s.coal=null;o.push('自民党は単独で過半数に届かず、連立を組む相手もいませんでした')}
  {let ops=oppSeats(k,en,hk,sim,N,cp?cp.seats:0);rec.opn2=ops.n;rec.ops=ops.v;rec.opsh=ops.h}
- s.minor=s.ruling&&sim<maj&&tot2<maj;rec.cpn=cp&&s.ruling?cp.name:'';rec.cps=cp&&s.ruling?cp.seats:0;rec.cpe=cp?cp.est:0;
+ s.minor=s.ruling&&sim<maj&&tot2<maj;rec.cpn=cp&&s.ruling&&s.coal?cp.name:'';rec.cps=cp&&s.ruling&&s.coal?cp.seats:0;rec.cpe=cp?cp.est:0;
  let lr=en.kind=='hist'&&hs?!(hk=='1993.5'||hk=='2009.5'):null;
+ if(!s.div&&s.ruling!=histRuling(+k+.01)&&!(+k<1980.5)){let lp=ldpPrez(+k);divHist(o,k,s.ruling?'史実では下野した自民党が、'+lp.n+'総裁のもとで政権を維持しました。':'史実では政権を維持した自民党が下野しました。')}
  if(lr!=null&&lr!=s.ruling){s.histx=1;o.push('IF:史実と違い、自民党は'+(s.ruling?'政権を維持':'下野')+'しました');lg('IF:総選挙の結果、史実と違って自民党が'+(s.ruling?'政権を維持した':'下野した'),'if')}
- if(!s.ruling&&wasR&&s.ifTL)s.selNow=ky()+.5;
+ if(!s.ruling&&wasR&&s.ifTL&&s.div)s.selNow=ky()+.5;
  if(!s.ruling&&wasR){let hist=lr===false,op=oppAt(+k);s.ogov={hist,party:op.party,leader:op.leader,single:hist?hk=='2009.5':Math.random()<.3,since:+k};s.ldpBack=0;let t2='【政権交代】'+(hist?'[史実]':'(IF)')+'自民党は野党になり、'+(hist?'非自民の政権':op.party+'の'+op.leader+'氏を首班とする政権')+'が発足しました';o.push(t2);lg(t2,hist?'e':'if')}
  if(s.ruling&&!wasR){s.ogov=null;s.ldpBack=1;o.push('【政権復帰】自民党が'+(s.coal&&sim<maj?s.coal+'との連立で':'')+'過半数を確保し、政権に復帰しました')}
  if(s.pos.g=='pm'&&!s.ruling){lg('総選挙で敗れ内閣総理大臣を退任[IF]','p',{ifx:1});s.pos.g=null}
@@ -625,7 +630,7 @@ function elect(k,o){koninCheck(o);let en=eNext(),hk=en.hk!=null?String(en.hk):nu
  t+='／'+(s.ruling?'野党第一党':'最大の非自民政党')+':'+rec.opn2+rec.ops+'議席'+(rec.opsh?'(史実'+rec.opsh+'議席)':'');
  o.push(t);lg(t,'e',{ifx:sim!=hs||en.kind!='hist'});s.lastE=+k;s.dis=null;if(en.kind!='hist'&&!s.offH){s.offH=1;lg('IF:史実と違う時期に総選挙が行われたため、以後の総選挙は首相の解散か任期満了(4年)で行われます','if')}setNpcD();return rec}
 function setNpcD(){let L=lastE(),d=L+[2.5,3,3,3.5][R0(0,3)];if(d<=ky())d=ky()+1;s.npcD=d}
-function upper(k,o){let r=s.w*2+R0(-5,5),seats=cl(30,80,55+r),txt=UH[k]||'';
+function upper(k,o){let r=s.w*2+R0(-5,5),seats=cl(30,80,55+r),txt=s.div&&+k>s.div?'':UH[k]||'';
  if(s.ruling&&r<0)s.nejire=1;else if(r>=2)s.nejire=0;
  s.up.push({k,txt,seats,good:r>=0,nj:s.nejire,dt:UD[k]||'',nt:UN[k]||''});s.w+=r>=0?1:-1;
  let t='【参院選'+(UD[k]?'・'+UD[k]:'(推定日程)')+'】'+(txt||'史実:(このゲームでは詳細未収録)')+'／IFシミュレーション上の結果(推定):自民党の獲得'+seats+'議席・'+(r>=0?'優勢':'劣勢')+(s.nejire?'・ねじれ国会':'');o.push(t);lg(t,'e',{ifx:1})}
@@ -639,7 +644,8 @@ function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=nu
 function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選んでください');
  let e=cur(),k=String(ky()),o=[],c=e.o[s.pick],L='ABCDEF'[s.pick],d=[],
  b={psn:posList(s.pos),ne:s.elec.length,pm:pm(),ru:s.ruling,w:s.w,t:s.terms,ps:Object.assign({},s.pos),out:s.out,nj:s.nejire,ky:ky(),y:s.y,h:s.h};
- s.rose=0;s._mn=0;facTick(o);if(s.ruling&&s.minor&&!s.ret&&Math.random()<.3){s.w=Math.max(-10,s.w-1);o.push('少数与党で国会運営が混乱し、党勢が下がりました(党勢-1)')}const _pre={inc:(s._jx&&s._jx.i)?s._jx.i[0]:'',mu:(s.mul||[]).map(i=>M[i]&&M[i][0]).filter(Boolean),st:Object.assign({},s.st),fac:s.fac,left:s.left,ach:Object.keys(s.ach||{}).length,e0:s.end};
+ s.rose=0;s._mn=0;facTick(o);if(!s.div){let dv=(s.elec||[]).find(x=>x.kind=='hist'&&!x.ret!==undefined&&x.r!=null&&x.r!=histRuling(+x.k+.01));if(dv){divHist(o,dv.k,'過去の総選挙('+Math.floor(dv.k)+'年)で史実と違う政権の結果になっていました。');if(selDue()<ky())s.selNow=ky()+.5}}
+ if(!s.div&&s.ruling!=histRuling(ky())&&![1994,1994.5,2012.5].includes(ky())&&ky()>1980.5){divHist(o,ky(),s.ruling?'史実では野党だった時期に、自民党が政権を担っています。':'史実では与党だった時期に、自民党が野党になっています。')}if(s.ruling&&s.minor&&!s.ret&&Math.random()<.3){s.w=Math.max(-10,s.w-1);o.push('少数与党で国会運営が混乱し、党勢が下がりました(党勢-1)')}const _pre={inc:(s._jx&&s._jx.i)?s._jx.i[0]:'',mu:(s.mul||[]).map(i=>M[i]&&M[i][0]).filter(Boolean),st:Object.assign({},s.st),fac:s.fac,left:s.left,ach:Object.keys(s.ach||{}).length,e0:s.end};
  const nd=PM.some(x=>x[0]==ky())||s.h==1;
  if(s.ret&&e===RET){if(s.pick==5){if(age()<75){s.ret=0;s.end=0;s.out=true;lg('再出馬を表明','p')}else o.push('75歳を超えているため、再出馬は見送りました')}if(s.pick==4){s.end=1;s.final=1;s.endReason='政治活動からの完全な引退'}if(s.pick==0)s.heir=1}
  if(e.ifsel){ifSelRun(e,o)}
@@ -654,11 +660,11 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
    if(s.pick==0)ap('i2,n2','史実どおりの勝ち馬を支持',o);
    else if(Math.random()<Math.min(isLeader()?.7:.5,(s.st.i+s.st.f+s.st.n)/300+.05+(isLeader()?facInf()/250+(s.fc.coh??50)/400:0)+(syncNow?.15:0))){s.ifpm={k:ky(),n:ch};s.prez={n:ch,since:ky(),cons:1};divTL(o);ap('i4,n3,w1','支持した候補が逆転勝利',o);let t='IF:史実では'+h+'氏が選出されたが、本シミュレーションではあなたの支持で'+ch+'氏が選出された。';o.push(t);lg(t,'if')}
    else ap('i-2,n-1','支持した候補は及ばず',o)}}
- else{ap(c[1],'選択'+L,o);if(/z1/.test(c[1])&&!s.left)rebel(o);if(s.nejire&&/p\d/.test(c[1]))ap('p-1','ねじれ国会で政策の実現が難航',o)}
+ else{ap(c[1],'選択'+L,o);specAct(c[1],o);if(e===EREF)setEsys(/S1/.test(c[1])?'mid':/S3/.test(c[1])?'hist':'ldp',o,/先送り/.test(c[0]));if(/z1/.test(c[1])&&!s.left)rebel(o);if(s.nejire&&/p\d/.test(c[1]))ap('p-1','ねじれ国会で政策の実現が難航',o)}
  if(e.sel&&e.dir!=null&&s.pick!==e.dir&&s.pos.g!='pm')defect(o);
  if(ifSelK(k)&&!e.ifsel)autoSel(k,o);
  if(e.yut){if(s.pick==0)endGame('勇退',o);else{s.ext=ky();lg('「あと1期だけ」と続投を決めた','p');o.push('あと1期だけ続けると決めました。次の総選挙では必ず引退します')}}
- s.mul.forEach(i=>{let m=M[i];if(!m||!mAvail(i))return;ap(m[1],m[0],o);if(m[3]){let f=s.fc;for(const k in m[3])f[k]=k=='mem'?Math.max(0,(f[k]||0)+m[3][k]):cl(0,100,(f[k]==null?50:f[k])+m[3][k]);o.push(m[4]+'('+m[0]+')')}});if(s.fev&&s.fpick!=null)applyFev(o);{let jx=s._jx||{};if(jx.j){ap(jx.j[1][1],jx.j[0],o);if(/x1/.test(jx.j[1][1]))termExtTry(o);lg(jx.j[0]+' → '+jx.j[1][0],'c')}if(jx.i){ap(jx.i[1][1],'出来事:'+jx.i[0],o);minorAct(jx.i[1][1],o);if(/z1/.test(jx.i[1][1])&&!s.left)rebel(o);lg('出来事「'+jx.i[0]+'」 → '+jx.i[1][0],'c')}s._jx=null}
+ s.mul.forEach(i=>{let m=M[i];if(!m||!mAvail(i))return;ap(m[1],m[0],o);if(m[3]){let f=s.fc;for(const k in m[3])f[k]=k=='mem'?Math.max(0,(f[k]||0)+m[3][k]):cl(0,100,(f[k]==null?50:f[k])+m[3][k]);o.push(m[4]+'('+m[0]+')')}});if(s.fev&&s.fpick!=null)applyFev(o);{let jx=s._jx||{};if(jx.j){ap(jx.j[1][1],jx.j[0],o);specAct(jx.j[1][1],o);if(/x1/.test(jx.j[1][1]))termExtTry(o);lg(jx.j[0]+' → '+jx.j[1][0],'c')}if(jx.i){ap(jx.i[1][1],'出来事:'+jx.i[0],o);minorAct(jx.i[1][1],o);specAct(jx.i[1][1],o);if(/z1/.test(jx.i[1][1])&&!s.left)rebel(o);lg('出来事「'+jx.i[0]+'」 → '+jx.i[1][0],'c')}s._jx=null}
  lg(e.t+' → '+L+'. '+c[0]+(s.mul.length?' ／追加:'+s.mul.map(i=>M[i][0]).join('・'):''),'c');
  for(let t in s.pos){let id=s.pos[t];if(id){s.sv[id]=(s.sv[id]||0)+.5;s.ten=s.ten||{};s.ten[id]=(s.ten[id]||0)+.5;ap(t=='f'?'f1':t=='d'?'d1':'i1,n1','在任:'+nm(id),o)}}
  if(s.heir&&s.ret)ap('i1,l1','後継者を通じた影響力',o);
@@ -667,14 +673,14 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
  if(ky()>=2027.5&&s.prez&&s.prez.n==s.name&&s.pos.g!='pm')newPrez(o);
  {let jr=s.elec.length>b.ne&&!s.ret?'総選挙後の内閣発足':(s.ifpm&&s.ifpm.k==ky())?'総裁の交代':(s.prez&&s.prez.since==b.ky&&s.prez.cons==1&&b.ky>=2026)?'総裁の交代':PM.some(x=>x[0]==ky())&&!s.ifTL?'新内閣の発足':(hSel(k)||ifSelK(k))?'総裁選後の党役員人事':s.h==1?'内閣改造':null;if(jr){s.lock=0;let m=reshuffle(jr,o);jmsg='【人事・'+jr+'】'+m;o.unshift(jmsg)}}
  economy(o);
- s.h?(s.h=0,s.y++):s.h=1;let fdn=fixDept();{let ns=nextSelK();s.seln=s.seln||{};if(ns>ky()&&ns-ky()<=1&&!s.seln[ns]){s.seln[ns]=1;lg('予告:'+Math.floor(ns)+'年'+half(ns%1)+'に自民党総裁選'+(canRun()?'(あなたは出馬できます)':''),'e')}}{let c=dcount(s.pf,dEra());if(s.dn&&s.dn>c){fdn.push('区割りの変更により、選挙区が'+s.pf+'第'+c+'区になりました');s.dn=c}}if(s.fac<5){let a=fent(s.fac,b.ky),c=fent(s.fac,ky());if(a&&c&&a!==c){if(!c[1]){s.fev=mkFev(a,c);s.fpick=null;fdn.push('史実:'+a[1]+'は解散しました')}else{fdn.push('史実:'+a[1]+'は'+c[1]+'になりました(時期は目安)。'+(c[3]||'')+'あなたは引き続き所属します');lg('派閥の継承:'+a[1]+' → '+c[1],'p');succ(fdn,a[1])}}}if(!s.ret&&!s.end&&isE(ky())){s.efd=s.efd||{};let kk=String(ky());if(!s.efd[kk]){s.efd[kk]=1;let a=0,t=[];if(!s.left){a+=5;t.push('党本部から5')}if(!s.left&&s.fac<5){let f=s.st.f,v=f<=20?2:f<=40?4:f<=60?6:f<=80?8:10;a+=v;t.push(fnm(s.fac)+'から'+v)}if(a){s.st.m=cl(0,100,s.st.m+a);fdn.push('総選挙に向けた選挙資金:'+t.join('・')+'(政治資金+'+a+')')}}}if(s.fac<5&&s.pos.f=='f2'&&!s.out&&!s.ret&&(ky()>=2024.5||s.ifTL)&&Math.random()<.04){fdn.push('派閥の会長が退任を表明し、後継を指名しました');succ(fdn)}if(s.susp&&ky()>=s.susp){s.susp=0;fdn.push('役職停止の処分期間が終わりました');lg('役職停止の処分期間が終わった','p')}if(!s.end&&age()>=80){endGame('80歳を迎えての引退',fdn);s.final=1}else if(!s.end&&age()>=72&&!s.ret&&Math.random()<.08)health(fdn);fdn.forEach(x=>o.push(x));s.pick=null;s.mul=[];s.asked=0;s.fa=0;s.lobbied=0;s.splitT=0;s.jpick=null;s.ipick=null;s.inc=(!s.ret&&!s.end&&Math.random()<[.2,.3,.4][dif()])?pickInc():null;s.msg='';s.res=o;s.stg=0;
+ s.h?(s.h=0,s.y++):s.h=1;let fdn=fixDept();{let ns=nextSelK();s.seln=s.seln||{};if(ns>ky()&&ns-ky()<=1&&!s.seln[ns]){s.seln[ns]=1;lg('予告:'+Math.floor(ns)+'年'+half(ns%1)+'に自民党総裁選'+(canRun()?'(あなたは出馬できます)':''),'e')}}{let c=dcount(s.pf,dEra());if(s.dn&&s.dn>c){fdn.push('区割りの変更により、選挙区が'+s.pf+'第'+c+'区になりました');s.dn=c}}if(s.fac<5){let a=fent(s.fac,b.ky),c=fent(s.fac,ky());if(a&&c&&a!==c){if(!c[1]){s.fev=mkFev(a,c);s.fpick=null;fdn.push('史実:'+a[1]+'は解散しました')}else{fdn.push('史実:'+a[1]+'は'+c[1]+'になりました(時期は目安)。'+(c[3]||'')+'あなたは引き続き所属します');lg('派閥の継承:'+a[1]+' → '+c[1],'p');succ(fdn,a[1])}}}if(!s.ret&&!s.end&&isE(ky())){s.efd=s.efd||{};let kk=String(ky());if(!s.efd[kk]){s.efd[kk]=1;let a=0,t=[];if(!s.left){a+=5;t.push('党本部から5')}if(!s.left&&s.fac<5){let f=s.st.f,v=f<=20?2:f<=40?4:f<=60?6:f<=80?8:10;a+=v;t.push(fnm(s.fac)+'から'+v)}if(a){s.st.m=cl(0,100,s.st.m+a);fdn.push('総選挙に向けた選挙資金:'+t.join('・')+'(政治資金+'+a+')')}}}if(s.fac<5&&s.pos.f=='f2'&&!s.out&&!s.ret&&(ky()>=2024.5||s.ifTL)&&Math.random()<.04){fdn.push('派閥の会長が退任を表明し、後継を指名しました');succ(fdn)}if(s.div&&s.div<1994&&!s.esys&&ky()>=1994.5){setEsys('ldp',fdn)}if(s.susp&&ky()>=s.susp){s.susp=0;fdn.push('役職停止の処分期間が終わりました');lg('役職停止の処分期間が終わった','p')}if(!s.end&&age()>=80){endGame('80歳を迎えての引退',fdn);s.final=1}else if(!s.end&&age()>=72&&!s.ret&&Math.random()<.08)health(fdn);fdn.forEach(x=>o.push(x));s.pick=null;s.mul=[];s.asked=0;s.fa=0;s.lobbied=0;s.splitT=0;s.jpick=null;s.ipick=null;s.inc=(!s.ret&&!s.end&&Math.random()<[.2,.3,.4][dif()])?pickInc():null;s.msg='';s.res=o;s.stg=0;
  /* 前ターンからの変化 */
  d.push(b.y+'年'+half(b.h)+'の動き:「'+e.t+'」'+(e.f?' '+e.f:''));
  if(jmsg)d.push(jmsg);fdn.forEach(x=>d.push(x+(/再編|制度|区割り/.test(x)?'[史実]':'')));if(b.h==1&&!s.ret)d.push('同期(IF・40人)の中での順位:'+crank()+'位');
  if(pm()!=b.pm)d.push('首相交代:'+b.pm+' → '+pm()+(pm().includes('(IF)')?' [IF]':' [史実]'));
  if(b.ru!=s.ruling)d.push('自民党は'+(s.ruling?'与党に復帰':'野党に転落')+'しました');
  if(b.nj!=s.nejire)d.push(s.nejire?'参議院で与党が劣勢になり「ねじれ国会」に(IF推定)':'ねじれ国会が解消しました(IF推定)');
- if(b.ky<1995&&ky()>=1995)d.push('区割り変更:1994年の政治改革関連法により、次の総選挙から小選挙区比例代表並立制になります[史実]');
+ if(b.ky<1995&&ky()>=1995&&!(s.esys=='mid'||s.esys=='ldp'))d.push('区割り変更:1994年の政治改革関連法により、次の総選挙から小選挙区比例代表並立制になります[史実]');
  if(b.w!=s.w)d.push('党勢の風:'+b.w+' → '+s.w);
  if(b.t!=s.terms)d.push('当選回数:'+b.t+'期 → '+s.terms+'期');
  if(s.out&&!s.ret&&!b.out)d.push('落選して浪人中です。次の総選挙で再挑戦できます');
@@ -816,6 +822,90 @@ INC.push({t:'内閣不信任案が提出された(首相)',mn:1,pm:1,d:'野党�
 {t:'野党が内閣不信任案を提出',mn:1,d:'少数与党の政権に対し、野党が不信任案を提出しました。与党議員の票の行方が注目されています。',o:[['党の方針どおり否決に回る','f2,i1'],['採決を欠席して執行部に不満を示す','k2,f-3,i-2']]},
 {t:'野党に法案を否決された',mn:1,d:'与党が重視していた法案が、野党の反対で否決されました。',o:[['野党の修正案を取り入れて再提出を準備する','o2,p1,i-1'],['否決の責任を野党に問う','k2,o-2,w-1']]},
 {t:'予算の修正協議が難航',mn:1,d:'予算案の修正をめぐる与野党協議が行き詰まっています。',o:[['自らが調整役を買って出る','o3,n1,m-2'],['執行部の判断に任せる','f1,k-1']]});
+
+/* ===== 政治状況ごとのカード =====
+ 状況 sit():'maj'=自民党の単独与党(連立なし)/'coal'=連立与党/'minor'=少数与党/'opp'=野党
+ カードの選び方:史実の出来事 → 総裁選 → 状況専用の課題 → 一般の課題。役職の仕事も状況ごとに別の組。
+ 特別な記号:U1=内閣不信任案の提出(野党時)/G1=連立の組み替えで政権をねらう(野党時)/X1=連立崩壊の恐れ/J0=連立を解消/J1=連立を組む */
+const sit=()=>!s||!s.ruling?'opp':s.minor?'minor':s.coal?'coal':'maj';
+const SITN={maj:'自民党の単独与党',coal:'連立与党',minor:'少数与党',opp:'野党'};
+/* ---- 連立与党のときの役職の仕事(各8種) ---- */
+const PJC={
+kt:[['連立相手の国対と法案の優先順位をすり合わせる','d3,o2,n1'],['連立相手が反対する法案の審議を後回しにする','o3,i-1,p-1'],['与党国対の連絡会議を取り仕切る','d2,n2,i1'],['野党との交渉で連立相手の顔を立てる','o3,d1,k-1'],['連立相手の議員の質問時間を確保する','o2,d2,n-1'],['与党内の法案修正を調整する','p2,o2,i-1'],['会期末の法案処理を連立相手と協議する','d3,o1,m-1'],['連立相手と野党の接近を警戒し情報を集める','o2,n2,i1']],
+sk:[['連立相手との選挙協力で候補者調整を担う','o3,n1,b-1'],['連立相手の支持団体にあいさつに回る','o3,b1,m-2'],['選挙区のすみ分けで地元の不満をなだめる','n2,o2,b-2'],['党の支持基盤の不満を連立相手に伝える','b2,i1,o-1'],['連立の成果を地方で説明して回る','w1,o1,m-2'],['連立相手との推薦の交換を取りまとめる','o3,i1,k-1'],['比例区での票の融通を設計する','o2,n2'],['連立相手の地方組織と勉強会を開く','o3,n1,m-1']],
+sec:[['連立相手の幹事長と定期協議を行う','o4,i2'],['選挙区の調整で連立相手に議席を譲る','o4,i-2,f-1'],['連立の政策合意の改定を取りまとめる','p2,o3,i1'],['連立相手が求める政策を党内で説得する','o3,n1,f-2'],['連立解消をちらつかせて主導権を握る','i3,k1,o-4,X1'],['連立の枠組みの拡大を探る','o3,n1,k1'],['連立相手との選挙協力の成果を検証する','n2,o2,m-1'],['連立相手の不祥事から距離を置く','k2,w1,o-2']],
+pr:[['連立相手の政調と政策をすり合わせる','o3,p1'],['連立相手が重視する政策を部会で検討する','o2,p2,f-1'],['与党の事前審査で連立相手と協議する','p2,o2,d1'],['連立相手との政策の違いを地元で説明する','b2,o1,k-1'],['支持団体の要望を連立相手と調整する','m2,o2,n-1'],['連立相手の慎重論を受けて法案を修正する','o3,p-1,i-1'],['与党のプロジェクトチームの座長を務める','p3,o1,m-1'],['連立相手の対案を党内で検討する','o2,n2']],
+pr6:[['与党の政策責任者会議で合意をまとめる','o4,p2,i1'],['連立相手の看板政策を予算に盛り込む','o3,p1,m-1,f-1'],['党の公約と連立合意の優先順位を決める','p3,i1,o-1'],['税制改正で連立相手と妥協点を探る','o3,p2,k-1'],['連立相手の反対を押し切って党の政策を通す','p3,i2,o-4'],['連立の政策合意を国民に説明する','k3,o1,w1'],['連立相手と共同で新しい政策を打ち出す','p2,o2,k1'],['党内の不満を抑えて連立合意を守る','i2,o2,f-2']],
+so:[['連立合意に沿った法案の総務会了承を急ぐ','i2,o1,f-1'],['連立相手への譲歩に総務会で異論を述べる','k2,f1,o-2'],['総務会で連立のあり方を議論する','d2,n2,o-1'],['与党の合意事項を党内に周知する','n2,i1'],['連立相手との合意の文言を確認する','p2,o1'],['党の独自性を守るよう総務会で訴える','f2,k1,o-1'],['若手の不満を聞き取る','n3,i-1'],['連立相手との交流会を企画する','o3,m-2']],
+so3:[['連立合意の法案を総務会で了承する','i3,o1,f-1'],['連立相手への過度な譲歩を戒める','f2,k2,o-3'],['党議決定で連立の結束を示す','i2,o2,k-1'],['党内の連立慎重派と会う','n3,f1,o-1'],['与党間の調整を総務会で後押しする','o2,d2'],['総務会の議論を公開して党の透明性を示す','k3,i-1'],['連立相手の幹部と懇談する','o3,n1'],['党則の運用で執行部を支える','i2,f1']],
+gv:[['連立相手出身の大臣を補佐する','o3,d2'],['連立相手の要望を省の政策に反映する','o2,p2,i-1'],['省内で連立相手との調整役を務める','o2,n2,d1'],['委員会で連立相手の議員の質問に答弁する','d3,o1'],['連立合意の施策の進み具合を点検する','p2,o1'],['自党の議員の要望を優先する','i2,f1,o-2'],['地元の事業を連立相手と共同で進める','b2,o2,m-1'],['所管の法案で連立相手と修正協議を行う','p2,o2,d1']],
+g3:[['与党党首会談の準備を担う','o3,n2'],['官邸と連立相手の連絡役を務める','o3,i1'],['連立相手の閣僚との調整を取り仕切る','o2,n2,d1'],['危機管理で連立相手の協力を得る','o2,k2'],['連立の政策合意の工程表を管理する','p2,o1'],['連立相手の不満を首相に伝える','o3,i-1'],['政府の発信で与党の一体感を示す','k2,o1'],['連立相手の要求を官僚と整理する','p1,o2,n1']],
+mn:[['連立相手が重視する施策を予算に入れる','o3,p1,m-1'],['所管の法案で連立相手の合意を取る','o3,p2'],['自党の支持団体の要望を優先する','b2,m2,o-2'],['連立相手出身の副大臣と協力する','o3,d1'],['連立の成果として政策を発表する','k3,o1'],['連立相手の反対を押し切って改革を進める','p3,k1,o-4'],['連立相手の地盤にも予算で配慮する','o3,b-1'],['記者会見で与党の結束を強調する','k2,o2']],
+pm:[['連立相手の党首と定期的に会談する','o4,k1'],['連立相手に閣僚ポストを増やす','o4,i-2,f-2'],['連立の政策合意を改定する','p2,o3,i1'],['連立を解消して単独政権をめざす','i2,k2,o-6,J0'],['連立の枠組みを広げる','o3,n2,f-1'],['連立相手が反対する政策を見送る','o3,p-2,i-1'],['連立相手との選挙協力を強める','o3,w1,m-2'],['与党党首会談で解散の時期を相談する','o2,i2']],
+cs:[['連立相手の党首の発言に会見で配慮する','o3,k1'],['与党の結束を記者会見で強調する','k2,o2'],['連立相手の閣僚の失言の火消しに走る','o2,n2,k-2'],['連立合意の政策の進み具合を発表する','k2,p1,o1'],['官邸と連立相手の調整を取り仕切る','o3,i2'],['連立相手の要求を各省に割り振る','p2,o2,n-1'],['連立解消の観測を否定する','k2,o1,i-1'],['与党党首会談を設定する','o4,n1']],
+cm:[['連立相手の理事と審議日程を調整する','o3,d2'],['連立相手の質問時間を確保する','o2,d1,n1'],['与党間の修正協議の場を設ける','o2,p1,d1'],['野党と連立相手の板挟みを調整する','d3,o1,i-1'],['委員会の視察に連立相手を誘う','o2,b1,m-1'],['採決の日程を連立相手と決める','d2,o2'],['連立相手の慎重論に配慮して審議を延ばす','o3,p-1'],['与党として審議を前に進める','d2,i2,o-1']],
+fx:[['派閥として連立の維持を支持する','f2,o2,C2'],['派閥内の連立慎重論をまとめる','f2,o-2,C3'],['連立相手の議員と派閥の勉強会を開く','o3,m-1,L2'],['連立相手との選挙協力に派閥の議員を協力させる','f1,o2,C-1'],['派閥として連立相手への譲歩に反対する','f2,k1,o-3,C2'],['派閥の総裁候補を連立相手に売り込む','o2,I2,L-1'],['派閥の若手を連立相手との窓口にする','o2,f1'],['派閥の会合で連立の成果を説明する','f2,o1,C1']]};
+PJC.dp=PJ.dp;
+/* ---- 野党のときの役職の仕事(各8種。総裁のときは党首としての仕事) ---- */
+Object.assign(PJO,{
+kt:[['与党の国対と国会日程の協議に臨む','d3,n2'],['政府提出法案を追及する審議時間を確保する','d3,k2'],['野党各党の国対と共闘を調整する','o3,n1,i1'],['審議拒否も辞さない構えで譲歩を引き出す','i2,k1,d-1'],['与党の強行採決に抗議して議場を退席する','k3,w1,d-1'],['政権の不祥事で集中審議を要求する','k3,d2,o-1'],['与党と法案の修正協議に応じる','d3,p1,k-1'],['野党共闘の足並みの乱れを修復する','o3,n1,m-1']],
+sk:[['次の総選挙に向けて候補者を発掘する','n3,b1,m-2'],['地方組織を回って党勢の回復を図る','w1,n2,m-2'],['党の資金集めを手伝う','m4,k-1'],['政権の失点を地方で訴えて回る','k2,w1,o-1'],['離党を考える議員を引き留める','n3,f1,m-1'],['業界団体との関係をつなぎ止める','m2,n2,k-1'],['若手候補の選挙を手伝う','n2,b1,m-3'],['他の野党との選挙区調整を探る','o3,i-1']],
+sec:[['政権奪還に向けた選挙戦略を練る','w2,i2,m-3'],['他の野党との選挙協力を探る','o3,n2,f-1'],['党の資金を立て直す','m4,i1,k-1'],['党の結束を保ち、離党者を出さない','f2,i2,m-2'],['与党の一部に連立の組み替えを持ちかける','o3,i2,k-2,G1'],['党改革の方針を打ち出す','k3,w1,f-2'],['政権の失政を追及する方針をまとめる','k2,d2,o-1'],['地方選挙で勝利を積み重ねる','b2,w1,m-3']],
+pr:[['政府の政策に対する対案をまとめる','p3,k1'],['業界団体の要望を聞き取る','n2,m2'],['政府提出法案を部会で検証する','p2,d2'],['政権奪還後の政策を準備する','p4,d-1'],['政府案の問題点を記者会見で指摘する','k3,o-1'],['他の野党と共同で対案を作る','o3,p2,f-1'],['地方の声を集めて政策に生かす','b2,p2,m-1'],['与党の政策の一部に賛成して実績にする','p2,o1,k-1']],
+pr6:[['政府の政策への対案を打ち出す','p4,k3,m-1'],['次の選挙公約づくりを主導する','p3,w1,m-1'],['与党と政策協議を行う','d3,n2,k-1'],['党の政策の柱を見直す','p3,i1,f-1'],['政府の予算案の組み替え案を出す','p3,d2'],['野党共闘の政策合意をまとめる','o4,p1,f-2'],['若手の政策提言を採り入れる','p2,n2,i-1'],['政権の経済運営を厳しく批判する','k3,w1,o-1']],
+so:[['党再建の議論を総務会で深める','n2,p2'],['執行部の責任を総務会で問う','k2,f1,i-2'],['党則の改正で党改革を進める','p2,i1,f-1'],['総務会で若手の登用を求める','n2,k2,i-1'],['野党共闘の是非を総務会で議論する','o2,d1,n1'],['総裁の求心力の回復を支える','i2,f1'],['党の資金の使い道を点検する','k2,m1'],['地方組織の不満を聞き取る','b2,n2']],
+so3:[['党再建の方針を総務会でまとめる','i3,p2,f-1'],['執行部の責任論を収める','i2,f2,k-2'],['党の綱領の見直しを主導する','p3,k2'],['野党共闘への参加の是非を決める','o3,i1,f-1'],['若手の声を総務会に反映させる','n3,k1,i-1'],['総裁選の前倒しを求める声に対応する','i2,n2'],['党の資金難への対策をまとめる','m3,i1,k-1'],['地方組織の立て直しを後押しする','b2,w1,m-2']],
+fx:[['派閥として党の再建を支える','f2,i1,C2'],['派閥から離党者を出さないよう引き留める','f2,m-2,C3'],['派閥の資金で落選した議員を支える','f2,m-4,N1,C2'],['次の総裁選に向けて派閥の候補を立てる','i2,I3,L-2'],['他派閥と連携して党の結束を図る','n2,L4'],['派閥の勉強会で政権奪還の政策を練る','p2,I1,C1'],['派閥の若手を地方回りに送り出す','f1,b1,C1'],['派閥の存続をかけて勢力の拡大に動く','i1,m-5,N3,C-1']],
+opl:[['内閣不信任案を提出する','k3,d2,U1'],['党首討論で首相を追及する','k4,d2,o-1'],['他の野党と政策協議を行う','o4,n1,f-1'],['与党の一部に連立の組み替えを持ちかける','o3,i2,k-2,G1'],['党の結束を訴え、離党者を防ぐ','f3,i2,m-2'],['全国を遊説して政権奪還を訴える','w2,k3,m-4'],['政権の政策に是々非々で協力する','p2,o2,k-1'],['党改革の断行を宣言する','k3,w1,f-2']]});
+/* ---- 状況ごとの政策課題 ---- */
+const GOP=[
+{fd:'opp',t:'野党:政府予算案への対応',x:['自民党は野党です。政府の予算案にどう向き合うかで、野党としての存在感が問われます。','対案を示して責任ある野党を示す','反対を貫いて政権との違いを鮮明にする'],o:[['予算案の組み替え動議を出す','p3,d2,m-1'],['反対を貫き、問題点を国会で追及する','k3,d2,o-1'],['国民生活に直結する部分には賛成する','p2,o2,f-1'],['審議拒否で政権に揺さぶりをかける','k2,w1,d-2']]},
+{fd:'opp',t:'野党:内閣不信任案の提出',x:['政権の支持率が下がり、野党として内閣不信任案を出すかどうかが議論になっています。','政権を追い込み、解散総選挙に持ち込む','否決されれば野党の力不足を見せる'],o:[['不信任案の提出を党に強く求める','k3,i1,U1'],['他の野党と共同提出をめざす','o3,n1,U1'],['今は時期ではないと慎重論を述べる','f2,i1,k-1'],['政策論争で政権を追い詰める','p3,d2']]},
+{fd:'opp',t:'野党:政権の不祥事の追及',x:['政権の閣僚や与党議員の不祥事が報じられています。','徹底追及で政権の責任を問う','追及ばかりでは政策論争が深まらない'],o:[['予算委員会で集中審議を求める','d3,k3,o-1'],['閣僚の辞任を求めて審議を止める','k3,w1,d-2'],['再発防止の法案を野党で提出する','p3,o2'],['追及は他党に任せ、政策に専念する','p2,k-1']]},
+{fd:'opp',t:'野党:他の野党との共闘',x:['政権を倒すため、他の野党との選挙協力や政策協力が議論されています。','野党がまとまらなければ政権は倒せない','理念の違う党と組めば支持層が離れる'],o:[['選挙協力を党内で主張する','o4,n1,f-2'],['政策ごとの協力にとどめる','o2,p2'],['自民党の独自路線を貫く','f3,k1,o-3'],['与党の一部を切り崩す道を探る','o2,i2,G1']]},
+{fd:'opp',t:'野党:党の再建と若返り',x:['政権を失った自民党で、執行部の刷新や若手の登用を求める声が強まっています。','世代交代で党を生まれ変わらせる','経験のある幹部なしに政権奪還はできない'],o:[['若手の要職への登用を訴える','k3,n2,i-1'],['ベテランの経験を生かすべきと主張する','i2,f2,k-1'],['党の綱領と政策の見直しを提案する','p3,k1'],['地方組織の立て直しに汗をかく','b3,w1,m-2']]},
+{fd:'opp',t:'野党:政権の看板政策への対応',x:['政権が看板政策を打ち出し、世論の支持を集めています。','良い政策には協力し、責任ある野党を示す','安易な協力は政権を助けるだけ'],o:[['修正を条件に賛成する','p2,o2,k-1'],['対案を出して違いを示す','p3,k1'],['財源の問題を厳しく追及する','d3,k2,o-1'],['地元への影響を調べて訴える','b3,l2']]},
+{fd:'opp',t:'野党:政権の外交・安全保障',x:['政権の外交・安全保障の方針に不安の声が出ています。','国益を守る立場から厳しく問う','外交は与野党で一致して臨むべき'],o:[['国会で政権の方針を厳しく質す','d3,k2'],['超党派で議員外交を進める','o3,n2'],['党の安全保障政策をまとめ直す','p3,i1'],['政権の方針の一部に協力する','o2,p1,f-1']]},
+{fd:'opp',t:'野党:補欠選挙と地方選挙',x:['補欠選挙や地方選挙で勝てるかどうかが、政権奪還への試金石です。','地方での勝利を積み重ねて党勢を回復する','地方選挙は国政とは別物'],o:[['補欠選挙の応援に全力を注ぐ','w2,n2,m-3'],['地方議員との連携を強める','b2,l3'],['知名度の高い候補を擁立する','k2,w1,m-2'],['党の政策を地方で訴える','p2,b2,m-1']]}];
+const GCO=[
+{fd:'coal',t:'連立:政策合意の改定',x:['連立相手との政策合意の見直しの時期が来ています。','合意を改定して連立を安定させる','譲りすぎれば党の独自性が失われる'],o:[['連立相手の要望を大きく取り入れる','o4,f-2,p-1'],['党の主張を通すよう強く交渉する','i2,f2,o-3'],['双方の看板政策を並べて妥協する','o2,p2'],['合意の改定を先送りする','f1,o-1,k-1']]},
+{fd:'coal',t:'連立:選挙区の候補者調整',x:['次の総選挙に向けて、連立相手と選挙区の候補者をどう分けるかが課題です。','すみ分けで与党の議席を最大化する','地元の支援者が納得しない'],o:[['連立相手に一部の選挙区を譲る','o4,i1,b-2'],['自党の候補者を優先するよう求める','b2,f2,o-3'],['比例区での協力で折り合う','o2,n2'],['支援者を説得して回る','b2,n1,m-2']]},
+{fd:'coal',t:'連立:安全保障をめぐる温度差',x:['安全保障政策で、連立相手は慎重な姿勢を見せています。','連立相手の慎重論に配慮して合意をつくる','国の安全に関わる政策で妥協すべきでない'],o:[['連立相手の歯止め案を受け入れる','o3,p1,k-1'],['党の方針どおり押し切るよう求める','p2,i2,o-4'],['与党協議の場で丁寧に議論する','d2,o2,n1'],['結論を先送りする','f1,p-1']]},
+{fd:'coal',t:'連立:連立相手の看板政策',x:['連立相手は、給付や福祉の拡充など看板政策の実現を強く求めています。','連立を保つため実現に協力する','財源の裏付けのない政策には反対'],o:[['予算に盛り込むよう協力する','o3,b1,p-1'],['規模を縮小して合意する','o2,p2'],['財政規律を理由に慎重論を述べる','p2,k1,o-2'],['自党の政策と組み合わせて実現する','p2,o1,i1']]},
+{fd:'coal',t:'連立:連立相手の不祥事',x:['連立相手の議員の不祥事が報じられ、政権への批判が強まっています。','連立相手に説明責任を求める','与党として一体で対応すべき'],o:[['連立相手に厳しい対応を求める','k2,w1,o-2'],['与党として一体で火消しにあたる','o2,n1,k-2'],['連立のあり方を見直す議論を始める','i1,k1,o-3'],['静観して政策に専念する','p1,f1']]},
+{fd:'coal',t:'連立:閣僚ポストの配分',x:['内閣改造を前に、連立相手から閣僚ポストを増やすよう求められています。','ポストを譲って連立を安定させる','自党の議員の処遇が悪くなる'],o:[['連立相手の要求に応じる','o3,i-1,f-1'],['自党の若手の登用を優先する','f2,n2,o-2'],['重要閣僚は自党で確保するよう求める','i2,o-1'],['首相の判断に任せる','f1,k-1']]},
+{fd:'coal',t:'連立:枠組み拡大の構想',x:['政権をより安定させるため、別の党を連立に加える構想が浮上しています。','多数を広げて政策を実現しやすくする','今の連立相手が反発する恐れ'],o:[['枠組み拡大を党内で主張する','o3,i1,f-1'],['今の連立相手との関係を優先する','o2,n2'],['拡大の相手と非公式に接触する','o4,k-1'],['反対の立場を表明する','f2,k1,o-2']]},
+{fd:'coal',t:'連立:連立解消論の浮上',x:['党内の一部から、連立を解消して単独で戦うべきだという声が出ています。','党の独自性を取り戻す','連立なしでは選挙も国会運営も厳しい'],o:[['連立の維持を訴える','o3,i1,f-1'],['解消論に同調する','f2,k2,o-4'],['両者の間を取り持つ','n3,o1'],['連立相手に関係見直しを申し入れる','i2,o-2,X1']]}];
+const GMJ=[
+{fd:'maj',t:'単独与党:数の力の使い方',x:['自民党は単独で過半数を持ち、どの法案も通せる状況です。','公約を速やかに実現する','強引な国会運営は世論の反発を招く'],o:[['重要法案を一気に成立させる','p3,i2,w-1,o-2'],['野党の意見も聞いて丁寧に進める','d3,o2,p1'],['党内の議論を重ねてから進める','f2,n2,p1'],['世論の反応を見て優先順位を決める','k2,w1']]},
+{fd:'maj',t:'単独与党:長期政権の緩み',x:['自民党の単独政権が続き、党内の緩みや慢心を指摘する声が出ています。','党の引き締めで信頼を守る','引き締めばかりでは党内の不満がたまる'],o:[['党の綱紀粛正を求める','k3,i1,f-1'],['若手の不満を聞いて回る','n3,i-1'],['政策で実績を積むことに集中する','p3,d1'],['党内の新しい勢力の結集に動く','n2,i2,f-2']]},
+{fd:'maj',t:'単独与党:党内の主導権争い',x:['単独与党の自民党では、野党よりも党内の派閥間の争いが政局を左右します。','主流派について人事で有利な立場をとる','反主流派として次をねらう'],o:[['主流派の一員として執行部を支える','i2,f2,k-1'],['反主流派と連携して発言力を高める','k2,n2,i-1'],['派閥間の調整役を買って出る','n3,i1,m-1'],['争いから距離を置いて政策に専念する','p3,k1,i-1']]},
+{fd:'maj',t:'単独与党:連立を組むかどうか',x:['単独で過半数がありますが、参議院の状況や将来の選挙をにらんで、他党と連立を組む案が出ています。','連立で安定した政権基盤をつくる','単独で十分であり、他党に譲る必要はない'],o:[['連立を組むよう党内で主張する','o4,i1,f-1,J1'],['単独政権の維持を主張する','f2,i1,o-1'],['政策ごとの協力にとどめる','o2,p1'],['判断を執行部に任せる','f1,k-1']]}];
+/* 首相のときの政策課題の選択肢(状況ごと) */
+const PMO={
+maj:[['政府の方針として決断し、閣議決定と法案の提出を主導する','p4,i2,w1,o-2,k-1'],['与党内の意見集約を優先し、党の了承を得てから進める','f3,i2,p1,w-1'],['野党と協議し、修正して幅広い合意をめざす','o3,d2,p1,i-2'],['記者会見や国会答弁で、国民に直接訴える','k4,w2,f-2,n-1']],
+coal:[['連立相手の了承を取り付け、政府方針として決断する','p4,i2,o-1,k-1'],['与党内の意見集約を優先する','f3,i2,p1,w-1'],['連立相手の主張を大きく取り入れて合意する','o4,p1,i-2,f-1'],['国民に直接訴え、連立相手を動かす','k4,w2,o-2,n-1']],
+minor:[['野党の一部と合意を取り付けて閣議決定する','o3,p2,i-1,m-1'],['与党内をまとめてから野党に協力を求める','f3,i1,o1,p-1'],['野党の修正をのんで成立を優先する','o4,p1,i-3'],['国民に直接訴え、野党に圧力をかける','k4,w1,o-3']]};
+/* 状況ごとの突発の出来事(st=出る状況) */
+INC.push(
+{t:'連立相手が離脱をちらつかせた',st:['coal'],d:'連立相手が政策への不満から、連立離脱の可能性に言及しました。',o:[['要求をのんで連立を維持する','o2,i-1,p-1'],['要求を突っぱねる(連立崩壊の恐れ)','i2,k1,X1']]},
+{t:'連立相手との選挙協力に地元が反発',st:['coal'],d:'連立相手の候補を推すよう求められ、地元の支援者が反発しています。',o:[['支援者を説得して協力する','o3,b-2'],['自分の支援者の意向を優先する','b2,o-2']]},
+{t:'与党の議員から接触があった',st:['opp'],d:'政権与党の一部の議員から、ひそかに接触がありました。',o:[['政権の切り崩しに動く','o2,i1,G1'],['慎重に様子を見る','n1']]},
+{t:'政権の閣僚が失言',st:['opp'],d:'政権の閣僚の失言が問題になっています。',o:[['辞任を求めて追及する','k3,d1'],['政策論争に集中する','p2']]},
+{t:'野党暮らしで党内に不満',st:['opp'],d:'野党生活が長引き、党内に執行部への不満がたまっています。',o:[['執行部を支えて結束を呼びかける','f2,i1'],['執行部の刷新を求める','k2,i-1,n1']]},
+{t:'単独与党の強行採決に批判',st:['maj'],d:'与党が採決を急いだことに、世論の批判が出ています。',o:[['党の方針を説明して回る','i2,k-1'],['丁寧な審議を党に求める','k2,i-1']]},
+{t:'大型連休の外遊ラッシュ',st:['maj','coal'],d:'与党の議員がこぞって外遊を計画しています。',o:[['議員外交で人脈を広げる','o2,n1,m-2'],['地元に残って支援者を回る','b2']]});
+/* 特別な記号の処理(政策課題・役職の仕事・突発の出来事のいずれでも働く) */
+function specAct(ef,o){if(!ef)return;const N=seatsN(ky()),maj=Math.floor(N/2)+1,last=s.lsim||Math.round(N*.45);
+ if(/U1/.test(ef)&&!s.ruling&&s.ogov){let p=cl(.05,.6,(s.ogov.single?.08:.3)+s.st.o/300+(s.prez&&s.prez.n==s.name?.05:0));if(Math.random()<p){if(Math.random()<.6){s.dis=ky();o.push('内閣不信任案が可決され、首相は衆議院を解散しました(見込み'+Math.round(p*100)+'%)。このターンの終わりに総選挙です');lg('IF:内閣不信任案が可決され、衆議院が解散された','if')}else{s.ogov.leader=(s.ogov.party||'与党')+'の新しい代表';o.push('内閣不信任案が可決され、内閣は総辞職しました(見込み'+Math.round(p*100)+'%)。首相が交代します');lg('IF:内閣不信任案が可決され、内閣が総辞職した','if')}divHist(o,ky(),'内閣不信任案の可決で政局が動きました。')}else o.push('内閣不信任案は否決されました(見込み'+Math.round(p*100)+'%)')}
+ if(/G1/.test(ef)&&!s.ruling){let me=s.prez&&s.prez.n==s.name,p=cl(.02,.35,(s.st.o+s.st.n+s.st.i)/700+(me?.08:0)+(['sec','so3','pr6'].includes(s.pos.p)?.04:0)-(s.ogov&&s.ogov.single?.12:0));
+  if(Math.random()<p){let pt=(s.ogov&&s.ogov.party?s.ogov.party+'から離脱した会派':'与党の一部')+'(IF)';s.ruling=true;s.coal=pt;s.minor=last+Math.round(N*.08)<maj;s.ogov=null;s.ldpBack=1;divHist(o,ky(),'連立の組み替えで自民党が政権に復帰しました。');
+   if(me){s.pos.g='pm';s.mc++;lg('IF:連立の組み替えで政権を奪還し、内閣総理大臣に就任','if');o.push('連立の組み替えに成功し、あなたが首相に就任しました(見込み'+Math.round(p*100)+'%)')}else o.push('連立の組み替えに成功し、自民党が'+pt+'との連立で政権に復帰しました(見込み'+Math.round(p*100)+'%)'+(s.minor?'。ただし少数与党です':''))}
+  else o.push('連立の組み替え工作は実りませんでした(見込み'+Math.round(p*100)+'%)')}
+ if(/X1/.test(ef)&&s.ruling&&s.coal){let p=cl(.1,.6,.5-s.st.o/200);if(Math.random()<p){let c=s.coal;s.coal=null;s.minor=last<maj;o.push(c+'が連立を離脱しました(見込み'+Math.round(p*100)+'%)'+(s.minor?'。自民党は少数与党になりました':''));divHist(o,ky(),c+'の連立離脱で政権の枠組みが変わりました。')}else o.push('連立は維持されました(崩壊の見込みは'+Math.round(p*100)+'%でした)')}
+ if(/J0/.test(ef)&&s.ruling&&s.coal&&s.pos.g=='pm'){let c=s.coal;s.coal=null;s.minor=last<maj;o.push(c+'との連立を解消しました'+(s.minor?'。自民党は少数与党になりました':'。自民党の単独政権です'));divHist(o,ky(),c+'との連立を解消しました。')}
+ if(/J1/.test(ef)&&s.ruling&&!s.coal){let p=cl(.15,.7,s.st.o/120+s.st.i/300);if(Math.random()<p){s.coal=(+ky()>=1999?'公明党':'中道系の政党')+'(IF)';o.push('党内の議論がまとまり、'+s.coal+'との連立が成立しました(見込み'+Math.round(p*100)+'%)');divHist(o,ky(),'史実と違う連立が成立しました。')}else o.push('連立の構想はまとまりませんでした(見込み'+Math.round(p*100)+'%)')}}
+const SPN={U1:'内閣不信任案を出す(可決なら解散か総辞職。見込みは他党人脈と政権の強さしだい)',G1:'連立の組み替えで政権をねらう(成功の見込みは他党人脈・党内人脈・党内影響力しだい)',X1:'連立が崩れる恐れ(他党人脈が高いほど防げる)',J0:'連立を解消する',J1:'連立の成立をめざす(見込みは他党人脈しだい)'};
 
 /* ===== 場面のドット絵(96x48・少し動く)。前のターンからの変化に1枚表示 ===== */
 const VW=96,VH=48;
@@ -1134,7 +1224,7 @@ const vigHtml=()=>{if(!s||!s.vig)return'';const v=VIG.find(x=>x.id==s.vig);if(!v
 const bar=(v,c)=>`<div class=gg><i style="width:${cl(0,100,v)}%;${c?'background:'+c:''}"></i></div>`;
 const lv=v=>v>=70?'高い':v>=40?'普通':v>=15?'低め':'低い';
 const tag=t=>`<span class="tg ${t=='史実'?'h':t=='IF'?'f':'e'}">${t}</span>`;
-function hint(ef,ex){let FX=[],FD=[];if(ef&&s&&s.fac<5){let T={};(ef.match(/(^|,)[CINL]-?\d+/g)||[]).forEach(x=>{x=x.replace(',','');T[x[0]]=(T[x[0]]||0)+ +x.slice(1)});for(const k in T)if(T[k])(T[k]>0?FX:FD).push(FK[k]+(T[k]>0?'↑':'↓')+Math.abs(T[k]))}let FXh=(FX.length?'<i class=up>派閥 '+FX.join('・')+'</i>':'')+(FD.length?'<i class=dn>派閥のデメリット '+FD.join('・')+'</i>':'');if(ef&&/D1|Q1|V1/.test(ef)){let n=/D1/.test(ef)?'衆議院を解散(このターンに総選挙)':/Q1/.test(ef)?'首相を退任(次のターンに総裁選)':'否決できるかは他党人脈しだい(失敗すると解散)';ex=ex?ex+'・'+n:n}if(!ef)return'<span class=hn><i class=nt>結果は総裁選の勝敗しだい(勝ち馬なら人事で有利/負ければ冷遇の恐れ)</i></span>';
+function hint(ef,ex){let FX=[],FD=[];if(ef){let sp=(ef.match(/[UGXJ][01]/g)||[]).map(x=>SPN[x]).filter(Boolean);if(sp.length)ex=(ex?ex+'・':'')+sp.join('・')}if(ef&&s&&s.fac<5){let T={};(ef.match(/(^|,)[CINL]-?\d+/g)||[]).forEach(x=>{x=x.replace(',','');T[x[0]]=(T[x[0]]||0)+ +x.slice(1)});for(const k in T)if(T[k])(T[k]>0?FX:FD).push(FK[k]+(T[k]>0?'↑':'↓')+Math.abs(T[k]))}let FXh=(FX.length?'<i class=up>派閥 '+FX.join('・')+'</i>':'')+(FD.length?'<i class=dn>派閥のデメリット '+FD.join('・')+'</i>':'');if(ef&&/D1|Q1|V1/.test(ef)){let n=/D1/.test(ef)?'衆議院を解散(このターンに総選挙)':/Q1/.test(ef)?'首相を退任(次のターンに総裁選)':'否決できるかは他党人脈しだい(失敗すると解散)';ex=ex?ex+'・'+n:n}if(!ef)return'<span class=hn><i class=nt>結果は総裁選の勝敗しだい(勝ち馬なら人事で有利/負ければ冷遇の恐れ)</i></span>';
  ef=scaleEf(nef(ef));let T={},S=[],Lg=[],D=[],F=[];if(/x1/.test(ef))F.push('総裁任期の延長を提案');if(/z1/.test(ef))D.push('党の方針に造反(処分の可能性)');
  (ef.match(/[a-z]-?\d+/g)||[]).forEach(x=>{let k=x[0],v=+x.slice(1);if(k=='r'){S.push(v?'与党入り':'野党の立場');return}if(!K[k]&&k!='w')return;
   if(k!='w'){if(v<0&&dif()==2)v=Math.round(v*1.5);if(v>0&&dif()==0)v=Math.ceil(v*1.3)}if(k=='b'&&v>0)v=Math.max(1,Math.round(v*.7));
@@ -1143,7 +1233,7 @@ function hint(ef,ex){let FX=[],FD=[];if(ef&&s&&s.fac<5){let T={};(ef.match(/(^|,
  return `<span class=hn>${FXh}${S.length?`<i class=up>短期 ${S.join('・')}</i>`:''}${Lg.length?`<i class=up>長期 ${Lg.join('・')}</i>`:''}${D.length?`<i class=dn>デメリット ${D.join('・')}</i>`:''}${F.length?`<i class=nt>${F.join('・')}</i>`:''}${ex?`<i class=nt>${esc(ex)}</i>`:''}${!FXh&&!S.length&&!Lg.length&&!D.length&&!F.length&&!ex?'<i class=nt>ステータスの変化なし</i>':''}</span>`}
 function hd(){const ps=posList(s.pos);return `<header class=top><div class=r1><span class=ttl>永田町の軌跡</span><span class=fl></span><button class=ib onclick="openM('snd')" aria-label="音の設定">${SND.on?'♪音ON':'♪音OFF'}</button><button class=ib onclick="openM('glo')">用語</button><button class=ib onclick="openM('tut')">遊び方</button><button class=ib onclick="s=null;R()">タイトル</button></div>
 <div class=r2><b class="yr${_lt!=null&&_lt!=tno()?' flip':''}">${s.y}<small>年${half(s.h)}</small></b><span class=tn>第${tno()}ターン</span><span class=pmn>首相 ${esc(pm())}</span></div>
-<div class=chips><span>${age()}歳</span><span>${s.terms}期</span><span>${esc(dname())}</span><span>${s.left?'無所属(離党中)':'自由民主党'}</span><span><i class=dot style="background:${FCOL[s.fac]}"></i>${fnm(s.fac)}</span><span class=hl>${ps.join('・')||'役職なし'}</span>${s.out&&!s.ret?'<span class=wn>浪人中</span>':''}${s.ret?'<span class=wn>引退</span>':''}${s.ruling?'':'<span class=wn>自民党は野党</span>'}</div>
+<div class=chips><span>${age()}歳</span><span>${s.terms}期</span><span>${esc(dname())}</span><span>${s.left?'無所属(離党中)':'自由民主党・'+SITN[sit()]+(s.coal&&s.ruling?'('+esc(s.coal)+'と連立)':'')}</span><span><i class=dot style="background:${FCOL[s.fac]}"></i>${fnm(s.fac)}</span><span class=hl>${ps.join('・')||'役職なし'}</span>${s.out&&!s.ret?'<span class=wn>浪人中</span>':''}${s.ret?'<span class=wn>引退</span>':''}${s.ruling?'':'<span class=wn>自民党は野党</span>'}</div>
 <nav>${TABS.map((x,i)=>`<button class="${i==tab?'on':''}" onclick="go(${i})">${x}${i==1&&s.pick==null&&!s.end?'<i class=bd></i>':''}</button>`).join('')}</nav></header>`}
 function go(i){tab=i;cRet=0;window.scrollTo(0,0);R()}
 function pk(i){let e=cur(),b=blks(e.o)[i];if(b.length){sfx('err');return toast(b.join('・')+'が0のため選べません')}s.pick=i;R()}
@@ -1173,7 +1263,7 @@ function turn(){if(s.end)return end();let e=cur(),k=String(ky()),L='ABCDEF',jc=j
  h+=tipUI();
  if(s.out&&!s.ret&&E[k])h+=`<details class=cd><summary><b>その頃の国政</b> ${tag('史実')}${esc(E[k].t)}</summary><p>${esc((EX[k]||[E[k].f])[0])}</p><p class=mu>${esc(E[k].f||'')}</p></details>`;
  h+=`<section class="cd now"><h3>現在の政治状況 <small>${s.y}年${half(s.h)}</small></h3><div class=kv><span>首相</span><b>${esc(pm())}</b><span>政権</span><b>${s.ruling?'自民党は与党':'自民党は野党'}${s.minor?'・少数与党(IF推定)':''}${s.nejire?'・ねじれ国会(IF推定)':''}</b><span>あなた</span><b>${s.terms}期・${fnm(s.fac)}・${ps}${s.out&&!s.ret?'・浪人中':''}</b>${s.want?`<span>人事希望</span><b>${nm(s.want)}(次の節目に総裁が決定)</b>`:''}<span>次の人事</span><b>${jLabel()}</b><span>次の総裁選</span><b>${selLabel()}</b><span>次の衆院選</span><b>${eLabel()}</b><span>次の参院選</span><b>${uLabel()}</b></div></section>`;
- if(isE(k))h+=`<div class="al e">今期に<b>衆議院総選挙</b>があります(${eLabel()})。下で選挙戦略を選んでください。${lastE()<1995&&+k>=1995?'今回から小選挙区比例代表並立制です。':''}</div>`;
+ if(isE(k))h+=`<div class="al e">今期に<b>衆議院総選挙</b>があります(${eLabel()})。下で選挙戦略を選んでください。${isMid(lastE())&&!isMid(k)?'今回から'+sysName(k)+'です。':''}</div>`;
  if(isU(k))h+=`<div class=al>今期は<b>参議院選挙</b>があります${UD[k]?'(史実:'+UD[k]+')':'(推定日程)'}。3年ごとに半数を改選します。結果は党勢と国会運営に影響します。</div>`;
  if(s.fev)h+=`<section class="cd inc"><div class=et>${tag('史実')}<h3>${esc(s.fev.t)}</h3></div><p>${esc(s.fev.d)}</p>${optList('fv',s.fev.o,s.fpick,'fp')}</section>`;
  if(ic)h+=`<section class="cd inc"><div class=et>${tag('推定')}<h3>突発の出来事:${esc(ic.t)}</h3></div><p>${esc(ic.d)}</p><p class=nt>ゲーム上の架空の出来事です(史実ではありません)。</p>${optList('ic',ic.o,s.ipick,'ip')}</section>`;
@@ -1202,7 +1292,7 @@ function end(){let r=s.endReason||'引退',dead=r=='病死',hist=s.log.filter(l=
 
 /* 3. 選挙 */
 function elec(){let o=pfo(s.pf);
- let h=`<section class=cd><h3>次の衆議院総選挙</h3><div class=kv><span>時期</span><b>${eLabel()}</b><span>次の参院選</span><b>${uLabel()}</b><span>選挙制度</span><b>${eNext().k<1995?'中選挙区制(1選挙区から複数人が当選。あなたの区の定数は'+mdm()+'・ゲーム上の目安)':'小選挙区比例代表並立制(1994年の政治改革関連法)'}</b><span>あなたの選挙区</span><b>${esc(dname())}</b></div>
+ let h=`<section class=cd><h3>次の衆議院総選挙</h3><div class=kv><span>時期</span><b>${eLabel()}</b><span>次の参院選</span><b>${uLabel()}</b><span>選挙制度</span><b>${isMid(eNext().k)?'中選挙区制(1選挙区から複数人が当選。あなたの区の定数は'+mdm()+'・ゲーム上の目安)'+(s.esys=='mid'?'。IF:政治改革で中選挙区制が維持されました':''):sysName(eNext().k)}</b><span>あなたの選挙区</span><b>${esc(dname())}</b></div>
 <p class=mu>当選の見込みはおもに地元地盤で決まります。地元地盤が高ければ党の風に左右されず安定して当選でき、低いと党勢しだいで当落が分かれます。知名度・政治資金・選挙戦略も影響します。<b>いまの当選の見込み:約${s.ret?'—':Math.round(winP(suppZ()+(s.out?.05:0))*100)+'%'}</b>(党勢${s.w>0?'+':''}${s.w}・地元地盤${s.st.b}・自動の応援を含み、選挙戦略は含まない場合)。小選挙区で負けても、惜敗率が高ければ比例代表で復活当選できます(1996年以降)。</p></section>`;
  if(!s.ret)h+=`<details class=cd><summary><b>選挙区を変更する</b></summary><p class=mu>国替えすると地元地盤が6割下がります。</p><div class=row><select id=mpf onchange="fillDn('mdn',this.value,1)">${PF.map(p=>`<option${p.n==s.pf?' selected':''}>${p.n}</option>`).join('')}</select><select id=mdn></select><button onclick="moveDist()">この選挙区に移る</button></div></details>`;
  h=(s.msg?`<div class=al>${esc(s.msg)}</div>`:'')+h+etimeUI()+`<section class=cd><h3>自民党の議席の推移</h3>${seatChart()}</section>`;h+=`<h3 class=sh>総選挙の結果</h3>`;
@@ -1283,12 +1373,12 @@ function conf(p){let L=[],P=s.pos,add=t=>{if(P[t]&&P[t]!=p.id)L.push(pname(P[t])
 function place(p){let L=conf(p),P=s.pos;if(p.id=='sp'||p.id=='dp'){P.p=P.g=P.f=P.d=null}else if(p.t=='g'){P.p=P.d=null}else if(p.t=='p'||p.t=='d'){P.g=null}
  if((P.d=='sp'||P.d=='dp')&&p.t!='d')P.d=null;P[p.t]=p.id;setDept(p.id);s.ten=s.ten||{};s.ten[p.id]=0;if(L)lg('就任に伴い退任:'+L,'p');return L}
 /* 役職の仕事 */
-function jobCard(){if(!s||s.ret||s.out||s.pos.d=='sp')return null;let id=s.pos.g||s.pos.d||s.pos.p||s.pos.f;if(!id)return null;
+function jobCard(){if(!s||s.ret||s.out||s.pos.d=='sp')return null;if(!s.ruling&&!s.left&&s.prez&&s.prez.n==s.name)return{id:'opl',t:'自民党総裁(野党第一党の党首)としての仕事',o:pjmPick(PJO.opl)};let id=s.pos.g||s.pos.d||s.pos.p||s.pos.f;if(!id)return null;
  let k=id=='pm'?'pm':id=='g6'?'cs':/^g[12]$/.test(id)?'gv':id=='g3'?'g3':/^g[45]$/.test(id)?'mn':/^c\d/.test(id)?'cm':id=='dp'?'dp':id=='sec'?'sec':/^sk/.test(id)?'sk':id=='pr6'?'pr6':/^pr/.test(id)?'pr':id=='so3'?'so3':/^so/.test(id)?'so':/^kt/.test(id)?'kt':/^f\d/.test(id)?'fx':null;
- if(k&&s.ruling&&s.minor&&PJM[k])return{id,t:pname(id)+'としての仕事(少数与党)',o:pjmPick(PJM[k])};
- return k?{id,t:pname(id)+'としての仕事'+(s.ruling?'':'(野党)'),o:!s.ruling&&PJO[k]?PJO[k]:k=='fx'?pjmPick(PJ.fx):PJ[k]}:null}
+ const pk8=L=>L&&L.length>4?pjmPick(L):L,st=sit(),SET={minor:PJM,coal:PJC,opp:PJO,maj:PJ}[st],L=k&&(SET[k]||PJ[k]);
+ return k&&L?{id,t:pname(id)+'としての仕事('+SITN[st]+')',o:pk8(L)}:null}
 const incCard=()=>s&&s.inc!=null&&!s.ret&&!s.end?INC[s.inc]:null;
-function pickInc(){const mn=s.ruling&&s.minor&&!s.left,ok=i=>(!INC[i].y||s.y>=INC[i].y)&&!(INC[i].z&&s.left)&&(!INC[i].mn||mn)&&(!INC[i].pm||s.pos.g=='pm')&&!(INC[i].mn&&!INC[i].pm&&s.pos.g=='pm');let c=INC.map((x,i)=>i).filter(ok);if(mn&&Math.random()<.5){let c2=c.filter(i=>INC[i].mn);if(c2.length)c=c2}return c[R0(0,c.length-1)]}
+function pickInc(){const mn=s.ruling&&s.minor&&!s.left,ok=i=>(!INC[i].y||s.y>=INC[i].y)&&!(INC[i].z&&s.left)&&(!INC[i].mn||mn)&&(!INC[i].pm||s.pos.g=='pm')&&!(INC[i].mn&&!INC[i].pm&&s.pos.g=='pm')&&(!INC[i].st||INC[i].st.includes(sit()));let c=INC.map((x,i)=>i).filter(ok);if(mn&&Math.random()<.5){let c2=c.filter(i=>INC[i].mn);if(c2.length)c=c2}return c[R0(0,c.length-1)]}
 function optList(nmx,list,cur,fn){const L='ABCDEF';let bs=blks(list),ab=false;return list.map((o,i)=>{let b=bs[i];return `<label class="o${cur===i?' sel':''}${b.length?' dis':''}"><input type=radio name=${nmx} ${cur===i?'checked':''} ${b.length?'disabled':''} onclick="${fn}(${i})"><span class=lt>${L[i]}</span><span class=ot><span>${esc(o[0])}</span>${hint(o[1])}${b.length?`<span class=xn>選べません:${b.join('・')}が0です</span>`:''}</span></label>`}).join('')+(ab?'<p class=nt>すべての選択肢で0のステータスが下がるため、今回は特例ですべて選べます。</p>':'')}
 function jp(i){let c=jobCard();if(!c)return;let b=blks(c.o)[i];if(b.length){sfx('err');return toast(b.join('・')+'が0のため選べません')}s.jpick=i;R()}
 function ip(i){let c=incCard();if(!c)return;let b=blks(c.o)[i];if(b.length){sfx('err');return toast(b.join('・')+'が0のため選べません')}s.ipick=i;R()}
@@ -1301,6 +1391,17 @@ const HSEAT=Object.assign({'1980':284},ELEC);
 const CAUSE={'1983.5':[[1983.5,1]],'1986.5':[[1985,.4],[1986.5,.6]],'1990':[[1988.5,.4],[1989,.6]],'1993.5':[[1992.5,.4],[1993,.6]],'2000':[[2000,1]],'2005.5':[[2005.5,1]],'2009.5':[[2007,.25],[2007.5,.1],[2009,.65]],'2012.5':[[2010,.3],[2011,.3],[2012,.4]],'2021.5':[[2020.5,.3],[2021,.7]],'2024.5':[[2023.5,.7],[2024.5,.3]],'2026':[[2025.5,1]]};
 /* 史実の野党第一党(総選挙後の議席) */
 const OPS={'1980':['日本社会党',107],'1983.5':['日本社会党',112],'1986.5':['日本社会党',85],'1990':['日本社会党',136],'1993.5':['日本社会党',70],'1996.5':['新進党',156],'2000':['民主党',127],'2003.5':['民主党',177],'2005.5':['民主党',113],'2009.5':['民主党',308],'2012.5':['民主党',57],'2014.5':['民主党',73],'2017.5':['立憲民主党',55],'2021.5':['立憲民主党',96],'2024.5':['立憲民主党',148],'2026':['中道改革連合',49]};
+/* 史実と違う政権になったら(s.div)、それ以降は史実の首相・総裁選・選挙日程・政局の出来事を使わない。災害や国際情勢など政権に関係なく起きる出来事だけ残す */
+const EXT=['1985.5','1991','1995','1997.5','2001.5','2002.5','2009','2011','2020','2021','2024'];
+/* 史実の首相の判断による出来事(史実と違う総裁になったら起きない) */
+const PMDEP=['1980.5','1988.5','2005.5','2007','2012','2015.5','2017','2019.5','2022.5','2023','2025','2026','2026.5'];
+const EREF={t:'IF:政治改革と選挙制度',x:['自民党が政権を維持したため、細川内閣による政治改革関連法は生まれませんでした。政治とカネへの批判は続いており、選挙制度をどうするかは自民党が決めることになります。','党主導で改革を進め、政治への信頼を取り戻す','中選挙区制には地域の多様な声を届ける良さもある'],o:[['中選挙区制を維持し、政治資金の規制強化で対応する','b3,f3,k-2,w-1,S1'],['自民党案の小選挙区比例代表並立制(小選挙区300・比例171)を成立させる','i3,p3,f-2,S2'],['野党と協議し、小選挙区300・比例200の並立制で合意する','d3,o3,k2,S3'],['結論を先送りし、党内の議論を続ける','f2,k-3,w-1,S2']]};
+EX.eref=EREF.x;
+const histOK=k=>{if(s.div&&+k>s.div)return EXT.includes(k);if(s.ifTL&&s.tlAt&&+k>s.tlAt&&PMDEP.includes(k))return false;return true};
+function ldpPrez(k){let L=PM.filter(x=>x[0]<k&&!/細川|羽田|村山|鳩山|菅直人|野田/.test(x[1])).pop();return L?{n:L[1].split('→').pop(),since:L[0]}:{n:'自民党総裁',since:k}}
+function setEsys(v,o,late){s.esys=v;let t=v=='mid'?'IF:政治改革で中選挙区制が維持されました。政治資金の規制は強化されます':v=='ldp'?'IF:'+(late?'結論を先送りするうちに党内の大勢が固まり、':'')+'自民党案の小選挙区比例代表並立制(小選挙区300・比例171)が成立しました。次の総選挙から導入されます':'IF:与野党の合意で小選挙区比例代表並立制(小選挙区300・比例200)が成立しました。次の総選挙から導入されます';o.push(t);lg(t,'if')}
+function divHist(o,k,why){if(s.div)return;s.div=+k;let lp=ldpPrez(+k);if(!s.ifTL){s.ifTL=1;s.tlAt=+k;s.selNow=null;if(!s.prez||s.prez.n==s.name&&s.pos.g!='pm')s.prez={n:lp.n,since:lp.since,cons:1}}if(!s.offH){s.offH=1;setNpcD()}
+ let t='【歴史の分岐】'+why+'ここから先は史実とは違うIFの歴史になります。首相・総裁選・総選挙の時期や政局の出来事は史実どおりには進みません(災害や国際情勢などは起きます)';o.push(t);lg(t,'if')}
 const histRuling=t=>!((t>=1993.5&&t<1994.5)||(t>=2009.5&&t<2012.5));
 /* 史実と違う時期の選挙:前後の史実の選挙と、その間に起きた出来事・政権の状況・党勢から推定 */
 function baseShare(k){const hk=Object.keys(HSEAT).filter(x=>HSEAT[x]>0).map(Number).sort((a,b)=>a-b);let P=hk.filter(x=>x<=k).pop(),H=hk.find(x=>x>k);if(P==null)P=hk[0];
@@ -1448,7 +1549,7 @@ function minorAct(ef,o){if(s.pos.g!='pm')return;
  if(/D1/.test(ef)){s.dis=ky();lg('IF:内閣不信任案に対し衆議院の解散を決断','if');o.push('衆議院を解散しました。このターンの終わりに総選挙です')}
  if(/Q1/.test(ef)){s.pos.g=null;s.selNow=ky()+.5;s.ifTL=1;if(!s.offH){s.offH=1;setNpcD()}lg('IF:内閣総辞職を決断し、首相を退任','if');o.push('内閣総辞職を決断しました。次のターンに後継の総裁選が行われます')}}
 function syncRoll(o){let p=syncP();if(s.fac<5&&p>0&&Math.random()<p){o.push('他派閥との関係が良く、他の派閥も投票先を'+fnm(s.fac)+'に合わせて同調しました(見込み'+Math.round(p*100)+'%)');return true}return false}
-function divTL(o){if(s.ifTL)return;s.ifTL=1;s.selNow=null;let t='IF:史実と違う総裁が誕生しました。以後の総裁選は任期3年の満了か総裁の辞任のときに行われ、総選挙も首相の解散か任期満了で行われます';o.push(t);lg(t,'if');if(!s.offH){s.offH=1;setNpcD()}}
+function divTL(o){if(s.ifTL)return;s.ifTL=1;s.tlAt=ky();s.selNow=null;let t='IF:史実と違う総裁が誕生しました。以後の総裁選は任期3年の満了か総裁の辞任のときに行われ、総選挙も首相の解散か任期満了で行われます';o.push(t);lg(t,'if');if(!s.offH){s.offH=1;setNpcD()}}
 function ifSelRun(e,o){s.selNow=null;let cs=e.sel,self=s.pick>=cs.length,inc=s.prez&&s.prez.n;
  if(self){let pr=Math.min(.78,(s.st.i+s.st.f+s.st.n+s.st.k)/400+(s.pos.g=='pm'?.2:0)+(s.fac<5?facInf()/500+facMem()/1000+(syncRoll(o)?.1:0):0)),wn=Math.random()<pr,tot=s.lsim||250,sh=wn?.5+R0(2,18)/100:.5-R0(2,18)/100;
   s.selr={me:Math.round(tot*sh),op:tot-Math.round(tot*sh),opn:cs[0],win:wn};
@@ -1567,10 +1668,10 @@ const prank=v=>v>=110?'S':v>=85?'A':v>=60?'B':v>=35?'C':'D';
 /* 当選の見込み:地元地盤が高いほど安定し、低いほど党勢(党の風)に左右される */
 function winP(z){let st=s.st;return cl(.05,.98,.28+st.b*.0062+(1-st.b/100)*s.w*.04+st.k*.0015+st.m*.0008+(z||0)+[.06,0,-.06][dif()]-(s.left?.12:0))}
 /* ---- 内閣総理大臣のときは、首相としての選択肢に切り替える ---- */
-function pmv(e){if(!s||s.pos.g!='pm'||!e||e.sel||e.yut)return e;let x=exp(e);return Object.assign({},e,{t:e.t+'(首相としての判断)',pmv:1,x,o:[['政府の方針として決断し、閣議決定と法案の提出を主導する','p4,i2,w1,o-2,k-1'],['与党内の意見集約を優先し、党の了承を得てから進める','f3,i2,p1,w-1'],['野党や連立相手と協議し、修正して合意をめざす','o3,d2,p1,i-2'],['記者会見や国会答弁で、国民に直接訴える','k4,w2,f-2,n-1']]})}
+function pmv(e){if(!s||s.pos.g!='pm'||!e||e.sel||e.yut)return e;let x=exp(e);let O=(PMO[sit()]||PMO.maj).slice();(e.o||[]).forEach(q=>{if(q&&/[UGXJ][01]/.test(q[1]))O.push(q)});return Object.assign({},e,{t:e.t+'(首相としての判断・'+SITN[sit()]+')',pmv:1,x,o:O.slice(0,5)})}
 /* ---- 連立・政権交代 ---- */
-function coalAt(k,hk,en,N){if(en.kind=='hist'&&CP[hk])return{name:CP[hk][0],seats:CP[hk][1],est:0};let c=COAL.find(x=>+k>=x[0]&&+k<x[1]);return c?{name:c[2],seats:Math.round(N*.06),est:1}:null}
-function oppAt(t){let r=OL[0];for(const x of OL)if(x[0]<=t)r=x;return{party:r[1],leader:r[2]}}
+function coalAt(k,hk,en,N){if(s.div&&+k>s.div){let nm=s.coal||(+k>=1999?'公明党':'中道系の野党(IF)');return{name:nm,seats:Math.round(N*.06),est:1,opt:!s.coal}}if(en.kind=='hist'&&CP[hk])return{name:CP[hk][0],seats:CP[hk][1],est:0};let c=COAL.find(x=>+k>=x[0]&&+k<x[1]);return c?{name:c[2],seats:Math.round(N*.06),est:1}:null}
+function oppAt(t){let r=OL[0],lim=s&&s.div&&t>s.div?s.div:t;for(const x of OL)if(x[0]<=lim)r=x;return{party:r[1],leader:s&&s.div&&t>s.div+1?r[1]+'の代表(IF)':r[2]}}
 const canSplit=()=>!s.ruling&&s.ogov&&!s.ogov.single&&!s.out&&!s.left&&!s.ret&&((s.prez&&s.prez.n==s.name)||['sec','sk3','kt5','kt4'].includes(s.pos.p));
 const splitP=()=>Math.min(.35,.05+s.st.o/300+s.st.i/600);
 function splitUI(){if(!canSplit())return'';let who=s.prez&&s.prez.n==s.name?'自民党総裁':pname(s.pos.p);return `<section class="cd pmx"><h3>連立政権への揺さぶり</h3><p class=mu>いまの政権は、単独で過半数を持つ党のない不安定な連立です。${esc(who)}として連立与党の一部に働きかけ、内部分裂を誘えます。成功すると首班指名が改めて行われ、自民党が政権に復帰します。他党人脈が高いほど成功しやすくなります(最大35%)。失敗すると他党人脈と知名度が下がります。</p><div class=row>${s.splitT?'<span class=bdg>このターンは実施済み</span>':`<button class=go onclick="doSplit()">揺さぶりをかける(成功率 約${Math.round(splitP()*100)}%)</button>`}</div></section>`}
