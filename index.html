@@ -219,7 +219,13 @@ const G=[
 {t:'政治資金・選挙制度',o:[['政治資金の公開強化を提案する','k3,m-2,w1'],['後援会の収支を点検し寄付を整理する','b2,m-3,l1'],['党内で選挙制度の見直し論議に参加する','p3,i2,n2'],['現行制度を維持し、派閥の結束を優先する','f4,k-2']]},
 {t:'地方創生と災害対策',o:[['地方交付税と補助金の確保を働きかける','l4,b3,m-1'],['防災・減災の長期計画を党で提案する','p3,k2'],['農林水産業の支援策を地元団体と協議する','l3,b3,m2'],['若者の定住策を自治体と共同で試す','l3,p2,k2']]}];
 const SP={t:'議長として:与野党協議の行き詰まり',f:'議長は政府や委員会を指揮せず、中立を保ち協議の場を支えます。',o:[['与野党の代表に協議の場を設けるよう提案する','d3,k2,i1'],['議長あっせん案を示す(受諾は各党が決める)','d4,k3'],['時間を置き、国会内の自主的な協議を見守る','d1'],['政府に国会への説明を求める(政府を指揮はしない)','d3,p1']]};
-const M=[['地元回りと後援会訪問','b3,l2,m-3'],['派閥・党内の勉強会に参加','i2,n2,f1,m-1'],['政治資金パーティーで資金を調達','m8,k-1'],['国会で質問の準備を重ねる','d3,p1']];
+/* 追加の活動(1ターンに2つまで)。[名称,効果,種別(g=議員/d=国会・浪人中は不可/f=派閥),派閥の内部数値,その説明] */
+const M=[['地元回りと後援会訪問','b3,l2,m-3','g'],['党の勉強会に参加する','i2,n2,m-1','g'],['政治資金パーティーで資金を集める','m8,k-1','g'],['国会で質問の準備を重ねる','d3,p1','d'],
+['派閥の例会に出席する','f3,n1','f'],['派閥の幹部に挨拶回りをする','f4,m-2','f'],['派閥の結束を固める会合を主催する','f5,m-5','f',{coh:5},'派閥の結束+5'],['派閥のパーティー券を売りさばく','f7,m-10','f',{coh:2},'派閥の結束+2'],
+['派閥の若手議員の面倒を見る','f3,i1,m-4','f',{mem:1},'派閥の所属議員+1'],['派閥の勢力拡大に動く','i1,m-8','f',{inf:4,mem:2},'派閥の影響力+4・所属議員+2'],['他派閥の幹部と協議する','n2','f',{rel:4,coh:-1},'他派閥との関係+4・派閥の結束-1']];
+const mAvail=i=>{let m=M[i];if(!m)return false;if(m[2]=='d'&&s.out)return false;if(m[2]=='f'&&(s.fac==5||s.left||s.ret||s.pos.d=='sp'))return false;return true};
+const mCost=i=>{let r=((M[i]||[])[1]||'').match(/(^|,)m-(\d+)/);return r?+r[2]:0};
+function mBl(i){let b=blk(M[i][1]).map(x=>x+'が0');let c=mCost(i);if(c&&s.st.m<c)b=['政治資金が足りません(必要'+c+')'];return b}
 const EX={'1980.5':['6月の衆参同日選挙で自民党が勝ち、鈴木内閣が発足。国の借金が膨らみ、財政を立て直せるかが焦点です。','歳出を絞れば将来の負担を減らせる','削れば公共事業や福祉が減り、地方が苦しむ'],
 '1981':['政府は行政の無駄を見直すため臨時行政調査会(臨調)を設置。省庁や補助金の削減が議論されました。','行政を効率化し増税を避けられる','必要な行政サービスまで削られる恐れ'],
 '1983.5':['ロッキード事件で田中元首相に一審有罪判決が出て、政治の倫理が問われました。','政治への信頼回復を最優先にすべき','裁判は確定しておらず、党の結束を崩すべきでない'],
@@ -414,7 +420,9 @@ EX.g7=['憲法改正や皇位継承など、国の基本に関わる議論は国
 /* 汎用カードの分野と解説を題名で結び付ける(並び順に依存しない) */
 {const F={'経済・財政運営':'kei','外交・安全保障':'gai','社会保障と少子高齢化':'sha','政治資金・選挙制度':'tou','地方創生と災害対策':'chi','エネルギーと原子力':'ene','教育と人材育成':'kyo','憲法と国のかたち':'ken'},X={'経済・財政運営':'g0','外交・安全保障':'g1','社会保障と少子高齢化':'g2','政治資金・選挙制度':'g3','地方創生と災害対策':'g4','エネルギーと原子力':'g5','教育と人材育成':'g6','憲法と国のかたち':'g7'};G.forEach(g=>{if(F[g.t])g.fd=F[g.t];if(X[g.t]&&!g.x&&EX[X[g.t]])g.x=EX[X[g.t]]})}
 /* 旧データの「地元関係(l)」を「地元地盤(b)」に統合する */
-function nef(ef){if(!ef||!/(^|,)l-?\d/.test(ef))return ef;let b=0,l=0,rest=[];ef.split(',').forEach(x=>{let m=x.match(/^([bl])(-?\d+)$/);if(m){if(m[1]=='b')b+=+m[2];else l+=+m[2]}else rest.push(x)});let v=b&&l&&Math.sign(b)==Math.sign(l)?b+Math.round(l/2):b+l;if(v)rest.unshift('b'+v);return rest.join(',')}
+/* 同じ項目の増減を差し引きして1つにまとめる(表示・適用とも) */
+function nef(ef){ef=nef0(ef);if(!ef)return ef;let T={},o=[],rest=[];ef.split(',').forEach(x=>{let m=x.match(/^([a-z])(-?\d+)$/);if(m&&(K[m[1]]||m[1]=='w')){if(!(m[1] in T))o.push(m[1]);T[m[1]]=(T[m[1]]||0)+ +m[2]}else if(x)rest.push(x)});return o.filter(k=>T[k]).map(k=>k+T[k]).concat(rest).join(',')}
+function nef0(ef){if(!ef||!/(^|,)l-?\d/.test(ef))return ef;let b=0,l=0,rest=[];ef.split(',').forEach(x=>{let m=x.match(/^([bl])(-?\d+)$/);if(m){if(m[1]=='b')b+=+m[2];else l+=+m[2]}else rest.push(x)});let v=b&&l&&Math.sign(b)==Math.sign(l)?b+Math.round(l/2):b+l;if(v)rest.unshift('b'+v);return rest.join(',')}
 /* 他党と関わる選択肢に「他党人脈」を設定する(与野党協議・超党派・連立・議会外交など) */
 const O_UP=/超党派|与野党|他党|他の野党|野党(と協|との|と共同|の国対|各党|の政策|修正案)|与党の国対|与党と政策|連立|公明|共闘|党首会談|議員連盟|幹事長会談|議会外交|各国の議員|新党/,O_DN=/審議拒否|強行/;
 let O_SET=[];
@@ -446,7 +454,7 @@ const STARTS=[[1980,'1980年6月22日','第36回総選挙(衆参同日選挙)','
 [2021.5,'2021年10月31日','第49回総選挙','岸田内閣のもとで自民党は単独過半数を維持し、第2次岸田内閣が発足しました。'],
 [2024.5,'2024年10月27日','第50回総選挙','派閥の政治資金問題の逆風で自民党は大敗。公明党と合わせても過半数に届かず、第2次石破内閣は少数与党として発足しました。'],
 [2026,'2026年2月8日','第51回総選挙','高市早苗首相のもとでの解散総選挙で自民党が大勝し、政権の基盤を固めました。']];
-let SK0=1980;const VER='第22版・2026年11月22日更新';
+let SK0=1980;const VER='第23版・2026年11月22日更新';
 /* 史実の幹事長と所属派閥(系譜の番号。-1=系譜外・無派閥)。英語版ウィキペディア「Secretary-General of the Liberal Democratic Party」の就任年月と各議員の所属派閥で確認 */
 const SECF=[[1980,3,'櫻内義雄'],[1981.5,0,'二階堂進'],[1983.5,2,'田中六助'],[1984.5,0,'金丸信'],[1986.5,0,'竹下登'],[1987.5,1,'安倍晋太郎'],[1989,0,'橋本龍太郎'],[1989.5,0,'小沢一郎'],[1991,0,'小渕恵三'],[1991.5,0,'綿貫民輔'],[1992.5,0,'梶山静六'],[1993.5,1,'森喜朗'],[1995.5,2,'加藤紘一'],[1998.5,1,'森喜朗'],[2000,0,'野中広務'],[2000.5,2,'古賀誠'],[2001,-1,'山崎拓'],[2003.5,1,'安倍晋三'],[2004.5,-1,'武部勤'],[2006.5,1,'中川秀直'],[2007.5,3,'伊吹文明'],[2008.5,1,'細田博之'],[2009.5,4,'大島理森'],[2010.5,-1,'石原伸晃'],[2012.5,-1,'石破茂'],[2014.5,-1,'谷垣禎一'],[2016.5,3,'二階俊博'],[2021.5,0,'茂木敏充'],[2024.5,-1,'森山裕'],[2025.5,4,'鈴木俊一']];
 const secAt=t=>{if(t>=2027.5)return null;let r=null;for(const e of SECF)if(e[0]<=t)r=e;return r};
@@ -598,7 +606,7 @@ function upper(k,o){let r=s.w*2+R0(-5,5),seats=cl(30,80,55+r),txt=UH[k]||'';
  let t='【参院選'+(UD[k]?'・'+UD[k]:'(推定日程)')+'】'+(txt||'史実:(このゲームでは詳細未収録)')+'／IFシミュレーション上の結果(推定):自民党の獲得'+seats+'議席・'+(r>=0?'優勢':'劣勢')+(s.nejire?'・ねじれ国会':'');o.push(t);lg(t,'e',{ifx:1})}
 
 /* ===== ターン決定 ===== */
-function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=null){if(jc&&s.jpick==null){sfx('err');return toast('役職の仕事を選んでください')}if(ic&&s.ipick==null){sfx('err');return toast('出来事への対応を選んでください')}if(s.fev&&s.fpick==null){sfx('err');return toast('派閥についての選択をしてください')}}s._jx={j:jc&&s.jpick!=null?[jc.t,jc.o[s.jpick]]:null,i:ic&&s.ipick!=null?[ic.t,ic.o[s.ipick]]:null}}if(!s.end&&s.pick!=null){let e=cur();if(blks(e.o)[s.pick].length)s.pick=null}if(s.mul.length&&blks(M)[s.mul[0]].length)s.mul=[];if(STG[s.stg||0][2]>0&&s.st.m<=0)s.stg=6;s.jnote=null;s.selr=null;let t0=tno(),ne=s.elec.length,pb=posList(s.pos),e0=s.end,st0=Object.assign({},s.st),wh=s.y+'年'+half(s.h);sub0();if(tno()==t0){sfx('err');return}
+function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=null){if(jc&&s.jpick==null){sfx('err');return toast('役職の仕事を選んでください')}if(ic&&s.ipick==null){sfx('err');return toast('出来事への対応を選んでください')}if(s.fev&&s.fpick==null){sfx('err');return toast('派閥についての選択をしてください')}}s._jx={j:jc&&s.jpick!=null?[jc.t,jc.o[s.jpick]]:null,i:ic&&s.ipick!=null?[ic.t,ic.o[s.ipick]]:null}}if(!s.end&&s.pick!=null){let e=cur();if(blks(e.o)[s.pick].length)s.pick=null}s.mul=(s.mul||[]).filter(i=>mAvail(i)&&!mBl(i).length);if(STG[s.stg||0][2]>0&&s.st.m<=0)s.stg=6;s.jnote=null;s.selr=null;let t0=tno(),ne=s.elec.length,pb=posList(s.pos),e0=s.end,st0=Object.assign({},s.st),wh=s.y+'年'+half(s.h);sub0();if(tno()==t0){sfx('err');return}
  let fx='next',le=s.elec[s.elec.length-1];if(s.elec.length>ne&&le&&!le.ret)fx=le.win?'win':'lose';else if(posList(s.pos).some(x=>!pb.includes(x)))fx='post';sfx(fx);chkAch();
  {let d=Object.keys(K).map(k=>[K[k],s.st[k]-st0[k]]).filter(x=>x[1]),ne2=s.elec.length>ne?s.elec[s.elec.length-1]:null,np=posList(s.pos).filter(x=>!pb.includes(x));
   let head=s.end&&!e0?'政治家人生の幕引き':s.selr?(s.selr.win?'総裁選に勝利!':'総裁選で敗れる…'):ne2&&!ne2.ret?(ne2.rv?'比例復活で当選!':ne2.win?'当選! '+s.terms+'期目':'落選…'):s.jnote&&!PLAIN.includes(s.jnote.kind)?'辞令:'+s.jnote.to:np.length?np.join('・')+'に就任':s.end?'政治家人生の幕引き':'半年が過ぎました';
@@ -624,8 +632,8 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
  if(e.sel&&e.dir!=null&&s.pick!==e.dir&&s.pos.g!='pm')defect(o);
  if(ifSelK(k)&&!e.ifsel)autoSel(k,o);
  if(e.yut){if(s.pick==0)endGame('勇退',o);else{s.ext=ky();lg('「あと1期だけ」と続投を決めた','p');o.push('あと1期だけ続けると決めました。次の総選挙では必ず引退します')}}
- if(s.mul.length){let m=M[s.mul[0]];ap(m[1],m[0],o)}if(s.fev&&s.fpick!=null)applyFev(o);{let jx=s._jx||{};if(jx.j){ap(jx.j[1][1],jx.j[0],o);if(/x1/.test(jx.j[1][1]))termExtTry(o);lg(jx.j[0]+' → '+jx.j[1][0],'c')}if(jx.i){ap(jx.i[1][1],'出来事:'+jx.i[0],o);if(/z1/.test(jx.i[1][1])&&!s.left)rebel(o);lg('出来事「'+jx.i[0]+'」 → '+jx.i[1][0],'c')}s._jx=null}
- lg(e.t+' → '+L+'. '+c[0]+(s.mul.length?' ／追加:'+M[s.mul[0]][0]:''),'c');
+ s.mul.forEach(i=>{let m=M[i];if(!m||!mAvail(i))return;ap(m[1],m[0],o);if(m[3]){let f=s.fc;for(const k in m[3])f[k]=k=='mem'?Math.max(0,(f[k]||0)+m[3][k]):cl(0,100,(f[k]==null?50:f[k])+m[3][k]);o.push(m[4]+'('+m[0]+')')}});if(s.fev&&s.fpick!=null)applyFev(o);{let jx=s._jx||{};if(jx.j){ap(jx.j[1][1],jx.j[0],o);if(/x1/.test(jx.j[1][1]))termExtTry(o);lg(jx.j[0]+' → '+jx.j[1][0],'c')}if(jx.i){ap(jx.i[1][1],'出来事:'+jx.i[0],o);if(/z1/.test(jx.i[1][1])&&!s.left)rebel(o);lg('出来事「'+jx.i[0]+'」 → '+jx.i[1][0],'c')}s._jx=null}
+ lg(e.t+' → '+L+'. '+c[0]+(s.mul.length?' ／追加:'+s.mul.map(i=>M[i][0]).join('・'):''),'c');
  for(let t in s.pos){let id=s.pos[t];if(id){s.sv[id]=(s.sv[id]||0)+.5;s.ten=s.ten||{};s.ten[id]=(s.ten[id]||0)+.5;ap(t=='f'?'f1':t=='d'?'d1':'i1,n1','在任:'+nm(id),o)}}
  if(s.heir&&s.ret)ap('i1,l1','後継者を通じた影響力',o);
  if(isU(k))upper(k,o);
@@ -750,16 +758,20 @@ function lookDesc(L){let a=[],sc=scene(L);a.push('背景:'+SCN[sc]+(sc=='local'|
 const bar=(v,c)=>`<div class=gg><i style="width:${cl(0,100,v)}%;${c?'background:'+c:''}"></i></div>`;
 const lv=v=>v>=70?'高い':v>=40?'普通':v>=15?'低め':'低い';
 const tag=t=>`<span class="tg ${t=='史実'?'h':t=='IF'?'f':'e'}">${t}</span>`;
-function hint(ef){if(!ef)return'<span class=hn><i class=nt>結果は総裁選の勝敗しだい(勝ち馬なら人事で有利/負ければ冷遇の恐れ)</i></span>';
- ef=scaleEf(nef(ef));let S=[],Lg=[],D=[];if(/x1/.test(ef))Lg.push('総裁任期の延長を提案');if(/z1/.test(ef))D.push('党の方針に造反(処分の可能性)');(ef.match(/[a-z]-?\d+/g)||[]).forEach(x=>{let k=x[0],v=+x.slice(1),n=K[k]||(k=='w'?'党の支持':k=='r'?(v?'与党入り':'野党の立場'):'');if(!n)return;if(k=='r'){S.push(n);return}if(v<0)D.push(n);else('mklb'.includes(k)?S:Lg).push(n)});
- return `<span class=hn>${S.length?`<i class=up>短期 ↑${S.join('・')}</i>`:''}${Lg.length?`<i class=up>長期 ↑${Lg.join('・')}</i>`:''}${D.length?`<i class=dn>デメリット ↓${D.join('・')}</i>`:''}</span>`}
+function hint(ef,ex){if(!ef)return'<span class=hn><i class=nt>結果は総裁選の勝敗しだい(勝ち馬なら人事で有利/負ければ冷遇の恐れ)</i></span>';
+ ef=scaleEf(nef(ef));let T={},S=[],Lg=[],D=[],F=[];if(/x1/.test(ef))F.push('総裁任期の延長を提案');if(/z1/.test(ef))D.push('党の方針に造反(処分の可能性)');
+ (ef.match(/[a-z]-?\d+/g)||[]).forEach(x=>{let k=x[0],v=+x.slice(1);if(k=='r'){S.push(v?'与党入り':'野党の立場');return}if(!K[k]&&k!='w')return;
+  if(k!='w'){if(v<0&&dif()==2)v=Math.round(v*1.5);if(v>0&&dif()==0)v=Math.ceil(v*1.3)}if(k=='b'&&v>0)v=Math.max(1,Math.round(v*.7));
+  if(s&&k=='f'&&s.fac==5)return;if(s&&s.out&&v>0){if(k=='d')return;if('ipo'.includes(k))v=Math.ceil(v/2)}T[k]=(T[k]||0)+v});
+ Object.keys(K).concat(['w']).forEach(k=>{let v=T[k];if(!v)return;let t=(K[k]||'党の支持')+(v>0?'↑':'↓')+Math.abs(v);if(v<0)D.push(t);else('mkb'.includes(k)?S:Lg).push(t)});
+ return `<span class=hn>${S.length?`<i class=up>短期 ${S.join('・')}</i>`:''}${Lg.length?`<i class=up>長期 ${Lg.join('・')}</i>`:''}${D.length?`<i class=dn>デメリット ${D.join('・')}</i>`:''}${F.length?`<i class=nt>${F.join('・')}</i>`:''}${ex?`<i class=nt>${esc(ex)}</i>`:''}${!S.length&&!Lg.length&&!D.length&&!F.length&&!ex?'<i class=nt>ステータスの変化なし</i>':''}</span>`}
 function hd(){const ps=posList(s.pos);return `<header class=top><div class=r1><span class=ttl>永田町の軌跡</span><span class=fl></span><button class=ib onclick="openM('snd')" aria-label="音の設定">${SND.on?'♪音ON':'♪音OFF'}</button><button class=ib onclick="openM('glo')">用語</button><button class=ib onclick="openM('tut')">遊び方</button><button class=ib onclick="s=null;R()">タイトル</button></div>
 <div class=r2><b class="yr${_lt!=null&&_lt!=tno()?' flip':''}">${s.y}<small>年${half(s.h)}</small></b><span class=tn>第${tno()}ターン</span><span class=pmn>首相 ${esc(pm())}</span></div>
 <div class=chips><span>${age()}歳</span><span>${s.terms}期</span><span>${esc(dname())}</span><span>${s.left?'無所属(離党中)':'自由民主党'}</span><span><i class=dot style="background:${FCOL[s.fac]}"></i>${fnm(s.fac)}</span><span class=hl>${ps.join('・')||'役職なし'}</span>${s.out&&!s.ret?'<span class=wn>浪人中</span>':''}${s.ret?'<span class=wn>引退</span>':''}${s.ruling?'':'<span class=wn>自民党は野党</span>'}</div>
 <nav>${TABS.map((x,i)=>`<button class="${i==tab?'on':''}" onclick="go(${i})">${x}${i==1&&s.pick==null&&!s.end?'<i class=bd></i>':''}</button>`).join('')}</nav></header>`}
 function go(i){tab=i;cRet=0;window.scrollTo(0,0);R()}
 function pk(i){let e=cur(),b=blks(e.o)[i];if(b.length){sfx('err');return toast(b.join('・')+'が0のため選べません')}s.pick=i;R()}
-function tg(i){if(i==3&&s.out)return;if(i>=0){let b=blks(M)[i];if(b.length){sfx('err');return toast(b.join('・')+'が0のため選べません')}}s.mul=i<0?[]:[i];R()}
+function tg(i){if(i<0){s.mul=[];return R()}if(!mAvail(i))return;let j=s.mul.indexOf(i);if(j>=0){s.mul.splice(j,1);return R()}let b=mBl(i);if(b.length){sfx('err');R();return toast('選べません:'+b.join('・'))}if(s.mul.length>=2){sfx('err');R();return toast('追加の活動は2つまでです')}let c=s.mul.reduce((a,x)=>a+mCost(x),0)+mCost(i);if(c>s.st.m){sfx('err');R();return toast('政治資金が足りません(2つ合わせて'+c+'必要)')}s.mul.push(i);R()}
 
 /* 1. ステータス */
 function dash(){let L=look(),lab=['外交安保','経済','社会保障','憲法','地方自治'];
@@ -798,8 +810,9 @@ ${(()=>{let bs=blks(e.o),ab=false;return e.o.map((o,i)=>{let b=bs[i];return `<la
 <p class=nt>※矢印は主な影響の方向です。実際の結果は情勢や運で変わります。</p></section>`;
  if(jc)h+=`<section class="cd job"><h3>${esc(jc.t)} <small>(1つ選択)</small></h3><p class=mu>役職に就いている間は、毎ターンその立場ならではの行動を選べます。</p>${optList('jc',jc.o,s.jpick,'jp')}</section>`;
  if(isE(k)&&!s.ret)h+=`<section class=cd><h3>選挙戦略 <small>(1つ選択)</small></h3>${(()=>{if(STG[s.stg||0][2]>0&&s.st.m<=0)s.stg=6;return STG.map((g,i)=>{let d=g[2]>0&&s.st.m<=0;return `<label class="o${(s.stg||0)==i?' sel':''}${d?' dis':''}"><input type=radio name=sg ${(s.stg||0)==i?'checked':''} ${d?'disabled':''} onclick="s.stg=${i};R()"><span class=ot><span><b>${g[0]}</b> <small>${g[2]?'資金-'+g[2]:'資金なし'}</small></span><span class=hn><i class=nt>${g[1]}</i></span>${d?'<span class=xn>選べません:政治資金が0です</span>':''}</span></label>`}).join('')})()}</section>`;
- h+=`<section class=cd><h3>追加の活動 <small>(1つだけ・任意)</small></h3><label class="o${s.mul.length?'':' sel'}"><input type=radio name=m ${s.mul.length?'':'checked'} onclick="tg(-1)"><span class=ot><span>追加の活動はしない</span></span></label>${M.map((m,i)=>{if(i==3&&s.out)return'';let b=blks(M)[i];return `<label class="o${s.mul[0]===i?' sel':''}${b.length?' dis':''}"><input type=radio name=m ${s.mul[0]===i?'checked':''} ${b.length?'disabled':''} onclick="tg(${i})"><span class=ot><span>${m[0]}</span>${hint(m[1])}${b.length?`<span class=xn>選べません:${b.join('・')}が0です</span>`:''}</span></label>`}).join('')}</section>`;
- h+=`<div class=db><div class=ds>${(()=>{let nd=[];if(s.pick==null)nd.push('政策課題');if(jc&&s.jpick==null)nd.push('役職の仕事');if(ic&&s.ipick==null)nd.push('出来事');if(s.fev&&s.fpick==null)nd.push('派閥の選択');return nd.length?`<b class=wn>未選択:${nd.join('・')}</b>`:`選択:<b>${L[s.pick]}</b>${jc?` ＋ 仕事${L[s.jpick]}`:''}${ic?` ＋ 出来事${L[s.ipick]}`:''}${s.mul.length?` ＋ ${M[s.mul[0]][0]}`:''}${isE(k)&&!s.ret?` ＋ ${STG[s.stg||0][0]}`:''}`})()}</div>${s.pick!=null||s.jpick!=null||s.ipick!=null?`<button class=sm2 onclick="s.pick=null;s.jpick=null;s.ipick=null;s.fpick=null;s.mul=[];R()">取消</button>`:''}<button class=go ${s.pick==null||(jc&&s.jpick==null)||(ic&&s.ipick==null)||(s.fev&&s.fpick==null)?'disabled':''} onclick="sub()">決定して半年進む</button></div>`;
+ h+=(()=>{let row=i=>{let m=M[i],on=s.mul.includes(i),b=on?[]:mBl(i);return `<label class="o${on?' sel':''}${b.length?' dis':''}"><input type=checkbox ${on?'checked':''} ${b.length?'disabled':''} onclick="tg(${i})"><span class=ot><span>${m[0]}</span>${hint(m[1],m[4])}${b.length?`<span class=xn>選べません:${b.join('・')}</span>`:''}</span></label>`},gi=M.map((m,i)=>i).filter(i=>M[i][2]!='f'&&mAvail(i)),fi=M.map((m,i)=>i).filter(i=>M[i][2]=='f'&&mAvail(i));
+ return `<section class=cd><h3>追加の活動 <small>(任意・2つまで選べます／いま${s.mul.length}つ選択中)</small></h3>${s.mul.length?`<div class=row><button class=sm2 onclick="tg(-1)">追加の活動をすべて外す</button></div>`:''}<h4>議員としての活動</h4>${gi.map(row).join('')}<h4>派閥の活動 ${s.fac<5?`<small>(${esc(fnm(s.fac))})</small>`:''}</h4>${fi.length?fi.map(row).join(''):`<p class=nt>${s.left?'離党中のため派閥の活動はできません。':s.fac==5?'無派閥のため派閥の活動はありません。「派閥」タブから派閥に入れます。':'いまは派閥の活動ができません。'}</p>`}<p class=nt>表示の数値は、選んだ難易度での増減の目安です(同じ項目の増減は差し引きした結果だけを表示)。ステータスが80以上のときは伸びが小さくなります。</p></section>`})();
+ h+=`<div class=db><div class=ds>${(()=>{let nd=[];if(s.pick==null)nd.push('政策課題');if(jc&&s.jpick==null)nd.push('役職の仕事');if(ic&&s.ipick==null)nd.push('出来事');if(s.fev&&s.fpick==null)nd.push('派閥の選択');return nd.length?`<b class=wn>未選択:${nd.join('・')}</b>`:`選択:<b>${L[s.pick]}</b>${jc?` ＋ 仕事${L[s.jpick]}`:''}${ic?` ＋ 出来事${L[s.ipick]}`:''}${s.mul.length?` ＋ ${s.mul.map(i=>M[i][0]).join('・')}`:''}${isE(k)&&!s.ret?` ＋ ${STG[s.stg||0][0]}`:''}`})()}</div>${s.pick!=null||s.jpick!=null||s.ipick!=null?`<button class=sm2 onclick="s.pick=null;s.jpick=null;s.ipick=null;s.fpick=null;s.mul=[];R()">取消</button>`:''}<button class=go ${s.pick==null||(jc&&s.jpick==null)||(ic&&s.ipick==null)||(s.fev&&s.fpick==null)?'disabled':''} onclick="sub()">決定して半年進む</button></div>`;
  return h}
 function end(){let r=s.endReason||'引退',dead=r=='病死',hist=s.log.filter(l=>l.k=='p'&&/辞令|就任|初当選/.test(l.t));
  return `<section class="cd hero"><div class=cvw><canvas id=cv2 width=48 height=48></canvas></div><div class=pf><h2>${dead?'政治家人生の終幕':'政治家人生の幕引き'}</h2><p>${esc(summaryText())}</p><p class=ttl2><span>${title()}</span>最終の政治力 <b>${power()}</b> <em class="rk r${prank(power())}">${prank(power())}</em></p>
@@ -837,8 +850,7 @@ function fac(){if(s.fac==5)return `<section class=cd><h3>無派閥</h3><p class=
  let f=s.fc;return (s.msg?`<div class=al>${esc(s.msg)}</div>`:'')+`<section class=cd><h3><i class=dot style="background:${FCOL[s.fac]}"></i>${fnm(s.fac)}</h3><p class=mu>系譜(時期は目安):${esc(flChain(s.fac))}</p>
 <div class=kv><span>所属議員数</span><b>約${facSize(s.fac)}人<small>(時代ごとの規模の目安)</small></b><span>総裁選での投票方針</span><b>${f.coh>=55?'派閥として一致して投票':f.coh>=35?'主流派に同調する傾向':'自主投票の傾向'}</b><span>党役員人事への影響力</span><b>${lv(f.inf)}</b></div>
 <div class=sl><span>派閥の影響力</span><b>${f.inf}</b></div>${bar(f.inf)}<div class=sl><span>派閥の結束</span><b>${f.coh}</b></div>${bar(f.coh)}<div class=sl><span>他派閥との関係</span><b>${f.rel||50}</b></div>${bar(f.rel||50)}<div class=sl><span>あなたへの信頼(派閥信頼度)</span><b>${s.st.f}</b></div>${bar(s.st.f)}</section>
-<section class=cd><h3>派閥の活動 <small>(1ターンに1回・${s.fa?'実施済み':'未実施'})</small></h3><div class=ag>
-<button ${s.fa?'disabled':''} onclick="fa(0)"><b>結束強化</b><small>資金-5・信頼+5</small></button><button ${s.fa?'disabled':''} onclick="fa(1)"><b>勢力拡大</b><small>資金-8</small></button><button ${s.fa?'disabled':''} onclick="fa(2)"><b>他派閥と協議</b><small>人脈+</small></button><button ${s.fa?'disabled':''} onclick="fa(4)"><b>若手の育成</b><small>資金-4・信頼+3</small></button><button ${s.fa?'disabled':''} onclick="fa(5)"><b>例会に出席</b><small>信頼+3</small></button><button ${s.fa?'disabled':''} onclick="fa(6)"><b>幹部へ挨拶回り</b><small>資金-2・信頼+4</small></button><button ${s.fa?'disabled':''} onclick="fa(7)"><b>パーティー券を売る</b><small>資金-10・信頼+7</small></button><button ${s.fa?'disabled':''} onclick="fa(8)"><b>会長の政策を支持</b><small>信頼+3・知名度-1</small></button></div><p class=nt>派閥に入っていれば、日ごろの活動で派閥信頼度が毎ターン1ずつ上がります(60まで)。</p></section>
+<section class=cd><h3>派閥の活動</h3><p class=mu>例会への出席や挨拶回り、パーティー券の販売などの派閥の活動は、「政策」タブの「追加の活動」で選べます(議員としての活動と合わせて1ターンに2つまで)。</p><div class=row><button onclick="go(1)">追加の活動を選ぶ</button></div><p class=nt>派閥に入っていれば、日ごろの活動で派閥信頼度が毎ターン1ずつ上がります(60まで)。</p></section>
 <details class=cd><summary><b>派閥を移籍する</b></summary><p class=mu>移籍すると派閥信頼度は0に戻り、派閥役職を失います。</p><div class=row><select id=mvf>${[0,1,2,3,4].filter(i=>i!=s.fac&&facAlive(i)).map(i=>`<option value=${i}>${fnm(i)}</option>`).join('')}</select><button onclick="fa(3)">移籍する</button></div></details>`+posts('f')}
 
 /* 8. 経歴 */
