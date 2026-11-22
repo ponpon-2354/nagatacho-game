@@ -470,7 +470,7 @@ const STARTS=[[1980,'1980年6月22日','第36回総選挙(衆参同日選挙)','
 [2021.5,'2021年10月31日','第49回総選挙','岸田内閣のもとで自民党は単独過半数を維持し、第2次岸田内閣が発足しました。'],
 [2024.5,'2024年10月27日','第50回総選挙','派閥の政治資金問題の逆風で自民党は大敗。公明党と合わせても過半数に届かず、第2次石破内閣は少数与党として発足しました。'],
 [2026,'2026年2月8日','第51回総選挙','高市早苗首相のもとでの解散総選挙で自民党が大勝し、政権の基盤を固めました。']];
-let SK0=1980;const VER='第31版・2026年11月22日更新';
+let SK0=1980;const VER='第34版・2026年11月22日更新';
 /* 史実の幹事長と所属派閥(系譜の番号。-1=系譜外・無派閥)。英語版ウィキペディア「Secretary-General of the Liberal Democratic Party」の就任年月と各議員の所属派閥で確認 */
 const SECF=[[1980,3,'櫻内義雄'],[1981.5,0,'二階堂進'],[1983.5,2,'田中六助'],[1984.5,0,'金丸信'],[1986.5,0,'竹下登'],[1987.5,1,'安倍晋太郎'],[1989,0,'橋本龍太郎'],[1989.5,0,'小沢一郎'],[1991,0,'小渕恵三'],[1991.5,0,'綿貫民輔'],[1992.5,0,'梶山静六'],[1993.5,1,'森喜朗'],[1995.5,2,'加藤紘一'],[1998.5,1,'森喜朗'],[2000,0,'野中広務'],[2000.5,2,'古賀誠'],[2001,-1,'山崎拓'],[2003.5,1,'安倍晋三'],[2004.5,-1,'武部勤'],[2006.5,1,'中川秀直'],[2007.5,3,'伊吹文明'],[2008.5,1,'細田博之'],[2009.5,4,'大島理森'],[2010.5,-1,'石原伸晃'],[2012.5,-1,'石破茂'],[2014.5,-1,'谷垣禎一'],[2016.5,3,'二階俊博'],[2021.5,0,'茂木敏充'],[2024.5,-1,'森山裕'],[2025.5,4,'鈴木俊一']];
 const secAt=t=>{if(t>=2027.5)return null;let r=null;for(const e of SECF)if(e[0]<=t)r=e;return r};
@@ -513,7 +513,9 @@ function lg(t,k,x){s.log.push(Object.assign({y:s.y,h:s.h,t,k},x||{}))}
 function toast(m){let t=$('toast');if(!t)return;t.textContent=m;t.className='show';clearTimeout(toastT);toastT=setTimeout(()=>t.className='',2800)}
 
 /* 首相表示: 主人公が首相ならIF、他候補のIF勝利は次の史実交代まで */
+const pmBase=x=>String(x||'').replace(/[((].*?[))]/g,'').trim();
 function pm(){let t=ky(),r=PM[0];for(let x of PM)if(x[0]<=t)r=x;
+ if(s&&s.ruling&&!s.div&&!histRuling(t)&&s.pos.g!='pm'){return (s.prez&&s.prez.n!=s.name?s.prez.n:ldpPrez(t).n)+'(IF)'}
  if(s.pos.g=='pm')return s.name+'(IF)';
  const nlH=(t>=1993.5&&t<1994.5)||(t>=2009.5&&t<=2012.5);
  if(!s.ruling){if(s.ogov&&s.ogov.hist&&nlH)return r[1];if(s.ogov&&s.ogov.leader)return s.ogov.leader+'('+s.ogov.party+'・IF)';return nlH?r[1]:'非自民の連立政権(IF)'}
@@ -645,7 +647,7 @@ function sub(){if(!s)return;{let jc=jobCard(),ic=incCard();if(!s.end&&s.pick!=nu
 function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選んでください');
  let e=cur(),k=String(ky()),o=[],c=e.o[s.pick],L='ABCDEF'[s.pick],d=[],
  b={psn:posList(s.pos),ne:s.elec.length,pm:pm(),ru:s.ruling,w:s.w,t:s.terms,ps:Object.assign({},s.pos),out:s.out,nj:s.nejire,ky:ky(),y:s.y,h:s.h};
- s.rose=0;s._mn=0;facTick(o);if(!s.div){let dv=(s.elec||[]).find(x=>x.kind=='hist'&&!x.ret!==undefined&&x.r!=null&&x.r!=histRuling(+x.k+.01));if(dv){divHist(o,dv.k,'過去の総選挙('+Math.floor(dv.k)+'年)で史実と違う政権の結果になっていました。');if(selDue()<ky())s.selNow=ky()+.5}}
+ s.rose=0;s._mn=0;facTick(o);if(s.pos.g=='pm'&&(s.sv.pm||0)>=1.5&&Math.random()<.3){s.w=Math.max(-10,s.w-1);o.push('長期政権への飽きが広がり、党勢が下がりました(党勢-1)')}if(!s.div){let dv=(s.elec||[]).find(x=>x.kind=='hist'&&!x.ret!==undefined&&x.r!=null&&x.r!=histRuling(+x.k+.01));if(dv){divHist(o,dv.k,'過去の総選挙('+Math.floor(dv.k)+'年)で史実と違う政権の結果になっていました。');if(selDue()<ky())s.selNow=ky()+.5}}
  if(!s.div&&s.ruling!=histRuling(ky())&&![1994,1994.5,2012.5].includes(ky())&&ky()>1980.5){divHist(o,ky(),s.ruling?'史実では野党だった時期に、自民党が政権を担っています。':'史実では与党だった時期に、自民党が野党になっています。')}if(s.ruling&&s.minor&&!s.ret&&Math.random()<.3){s.w=Math.max(-10,s.w-1);o.push('少数与党で国会運営が混乱し、党勢が下がりました(党勢-1)')}const _pre={inc:(s._jx&&s._jx.i)?s._jx.i[0]:'',mu:(s.mul||[]).map(i=>M[i]&&M[i][0]).filter(Boolean),st:Object.assign({},s.st),fac:s.fac,left:s.left,ach:Object.keys(s.ach||{}).length,e0:s.end};
  const nd=PM.some(x=>x[0]==ky())||s.h==1;
  if(s.ret&&e===RET){if(s.pick==5){if(age()<75){s.ret=0;s.end=0;s.out=true;lg('再出馬を表明','p')}else o.push('75歳を超えているため、再出馬は見送りました')}if(s.pick==4){s.end=1;s.final=1;s.endReason='政治活動からの完全な引退'}if(s.pick==0)s.heir=1}
@@ -678,7 +680,7 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
  /* 前ターンからの変化 */
  d.push(b.y+'年'+half(b.h)+'の動き:「'+e.t+'」'+(e.f?' '+e.f:''));
  if(jmsg)d.push(jmsg);fdn.forEach(x=>d.push(x+(/再編|制度|区割り/.test(x)?'[史実]':'')));if(b.h==1&&!s.ret)d.push('同期(IF・40人)の中での順位:'+crank()+'位');
- if(pm()!=b.pm)d.push('首相交代:'+b.pm+' → '+pm()+(pm().includes('(IF)')?' [IF]':' [史実]'));
+ if(pmBase(pm())!=pmBase(b.pm))d.push('首相交代:'+b.pm+' → '+pm()+(pm().includes('(IF)')?' [IF]':' [史実]'));
  if(b.ru!=s.ruling)d.push('自民党は'+(s.ruling?'与党に復帰':'野党に転落')+'しました');
  if(b.nj!=s.nejire)d.push(s.nejire?'参議院で与党が劣勢になり「ねじれ国会」に(IF推定)':'ねじれ国会が解消しました(IF推定)');
  if(b.ky<1995&&ky()>=1995&&!(s.esys=='mid'||s.esys=='ldp'))d.push('区割り変更:1994年の政治改革関連法により、次の総選挙から小選挙区比例代表並立制になります[史実]');
@@ -688,6 +690,7 @@ function sub0(){if(s.end)return;if(s.pick==null)return toast('A〜Dから1つ選
  if(!s.out&&b.out)d.push('国政に復帰しました');
  {let a1=b.psn.join('・')||'なし',a2=posList(s.pos).join('・')||'なし';if(a1!=a2)d.push('役職の変化:'+a1+' → '+a2)}
  d.push('次の総選挙:'+eLabel());d.push('次の参院選:'+uLabel());
+ if(!s.div&&!s.ret&&s.ruling!=histRuling(ky())&&![1994,1994.5,2012.5].includes(ky())){let lp=ldpPrez(ky());divHist(o,ky(),s.ruling?'史実では自民党が下野した時期ですが、'+lp.n+'政権が続いています。':'史実では自民党が与党の時期ですが、自民党は野党です。')}
  try{s.vig=pickVig(vCtx(b,e,c,o,d,_pre))}catch(err){s.vig='z_diet'}
  s.chg=d;save('ng_a',1);window.scrollTo(0,0);R()}
 
@@ -717,6 +720,176 @@ function st(){let g=x=>$(x),bd=g('bd').value||'1950-04-01',by=+bd.slice(0,4);
  let cand=s.ruling?['kt1','pr1','g1']:['kt1','pr1'],q=cand[R0(0,cand.length-1)],p=PS.find(x=>x.id==q);s.pos[p.t]=q;setDept(q);s.first=pname(q);lg('初当選時に就任:'+pname(q)+'(ゲーム上のランダム配属)','p');
  tab=1;cNew=0;save('ng_a',1);sfx('win');window.scrollTo(0,0);R()}
 function fillDn(sel,pf,v){let o={c:dcount(pf,s?dEra():(SK0<1995?1996:SK0))},h='';for(let i=1;i<=o.c;i++)h+=`<option value=${i}${i==v?' selected':''}>第${i}区</option>`;$(sel).innerHTML=h}
+/* ===== 画質:sfc=スーパーファミコン風(高精細・新)/fc=ファミコン風(従来) =====
+ 高精細では、同じ絵を細かい格子(キャラ4倍・場面3倍)で描き、
+ ①物の縁の光と影 ②面の質感(ディザ) ③人物・小道具の輪郭線と落ち影 ④上からの光の段階的な陰影 ⑤顔や服の細部 を加える */
+const GFX=()=>(typeof SND!='undefined'&&SND.gfx)||'sfc';
+function hexRGB(c){if(typeof c!='string'||c[0]!='#')return null;let h=c.slice(1);if(h.length==3)h=h.split('').map(x=>x+x).join('');if(h.length!=6)return null;return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+const _shC={};
+function shade(c,a){let k=c+'|'+a;if(k in _shC)return _shC[k];let v=hexRGB(c);if(!v)return _shC[k]=null;let f=x=>Math.max(0,Math.min(255,Math.round(a>0?x+(255-x)*a:x*(1+a))));return _shC[k]='rgb('+f(v[0])+','+f(v[1])+','+f(v[2])+')'}
+/* 縁に光と影、面に質感をつける塗り(座標は元の大きさ。ctx は S 倍に拡大済み) */
+function mkR(c,S,W,H){const p=1/S;const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);if(w<2||h<2||(w>=W*.9&&h>=H*.4))return;let hl=shade(col,.32);if(!hl)return;
+ c.fillStyle=hl;c.fillRect(x,y,w,p);c.fillStyle=shade(col,.1);c.fillRect(x,y+p,p,h-p);c.fillStyle=shade(col,-.35);c.fillRect(x,y+h-p,w,p);c.fillStyle=shade(col,-.2);c.fillRect(x+w-p,y+p,p,h-2*p);if(w>=3&&h>=3){c.fillStyle=shade(col,-.12);c.fillRect(x+p,y+h-2*p,w-2*p,p)}
+ let lv=hexRGB(col),lum=lv?(lv[0]*.3+lv[1]*.59+lv[2]*.11):0;if(w>=4&&h>=4&&w*h<W*H*.35&&lum<185){c.fillStyle=shade(col,-.1);let row=0;for(let yy=y+2*p;yy<y+h-2*p;yy+=3*p,row++)for(let xx=x+(row%2?3*p:1.5*p)+p;xx<x+w-2*p;xx+=3*p)c.fillRect(xx,yy,p,p)}};r.S=S;return r}
+const _lay={};
+function lay(k,w,h){let L=_lay[k];if(!L||L[0].width!=w||L[0].height!=h){let o=document.createElement('canvas');o.width=w;o.height=h;L=_lay[k]=[o,o.getContext('2d')]}const c=L[1];c.setTransform(1,0,0,1,0,0);c.globalCompositeOperation='source-over';c.globalAlpha=1;c.clearRect(0,0,w,h);c.imageSmoothingEnabled=false;return L}
+/* 上からの光:段階的(8段)に明るさを変える */
+function bandLight(c,w,h){c.save();c.setTransform(1,0,0,1,0,0);let n=16;for(let i=0;i<n;i++){let a=(i<n/2)?(.16*(1-i/(n/2))):(.22*((i-n/2+1)/(n/2)));c.fillStyle=i<n/2?'rgba(255,248,230,'+a.toFixed(3)+')':'rgba(10,10,40,'+a.toFixed(3)+')';c.fillRect(0,Math.floor(h*i/n),w,Math.ceil(h/n))}
+ /* 細かいディザの質感 */
+ c.fillStyle='rgba(0,0,0,.06)';for(let y=0;y<h;y+=2)for(let x=(y/2)%2?1:0;x<w;x+=3)c.fillRect(x,y,1,1);c.fillStyle='rgba(255,255,255,.05)';for(let y=1;y<h*.5;y+=3)for(let x=(y%2)?2:0;x<w;x+=5)c.fillRect(x,y,1,1);c.restore()}
+/* 人物・小道具の層に、立体の陰影 → 落ち影 → 輪郭線 をつけて重ねる */
+function spriteOut(dst,sp,S){const w=sp.width,h=sp.height,[m,mc]=lay('mask',w,h),sc=sp.getContext('2d');
+ sc.save();sc.setTransform(1,0,0,1,0,0);sc.globalCompositeOperation='source-atop';let g=sc.createLinearGradient(0,0,w*.6,h);g.addColorStop(0,'rgba(255,250,235,.2)');g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(10,10,40,.3)');sc.fillStyle=g;sc.fillRect(0,0,w,h);sc.restore();
+ mc.drawImage(sp,0,0);mc.globalCompositeOperation='source-in';mc.fillStyle='#17121f';mc.fillRect(0,0,w,h);
+ dst.save();dst.setTransform(1,0,0,1,0,0);dst.globalAlpha=.3;dst.drawImage(m,Math.max(1,S/2),Math.max(1,S/2));dst.globalAlpha=1;
+ for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])dst.drawImage(m,dx,dy);dst.drawImage(sp,0,0);dst.restore()}
+/* ステータス画面の主人公(高精細の細部) */
+function personHD(r,L){const a=L.age,f=L.sx=='女性',sk='#f0c8a2',pm=L.pos.g=='pm',spk=L.pos.d=='sp'||L.pos.d=='dp';
+ const hair=a<42?'#1d1a18':a<52?'#34302d':a<60?'#6a6663':a<70?'#a8a5a2':'#e0ddd8',suit=L.ret?'#6b7d4f':L.out?'#3a5f8f':pm?'#16181d':spk?'#2a2a30':f?'#2d3e63':'#22324f';
+ const q=.25,bald=!f&&L.sx!='回答しない'&&a>=68;
+ /* 目:白目・瞳・光 */
+ [20,26].forEach(x=>{r(x,16,2,2,'#fbfbfb');r(x+.5,16,1.25,2,'#3a2418');r(x+.75,16.5,.75,1.25,'#120c08');r(x+.5,16.25,.5,.5,'#fff')});
+ /* 髪のつや */
+ if(!bald){r(f?19:20,f?7:7,6,q,shade(hair,.45)||hair);r(f?18:19,f?8:8,4,q,shade(hair,.3)||hair);if(f){r(16.25,12,q,9,shade(hair,.3)||hair)}}
+ /* 顔の陰影と頬 */
+ r(29.5,12,.75,11,'rgba(150,80,50,.18)');r(18,23.75,12,.5,'rgba(150,80,50,.22)');r(19.25,19.25,1.5,.75,'rgba(240,110,110,.32)');r(27.25,19.25,1.5,.75,'rgba(240,110,110,.32)');
+ r(24.25,17.75,.5,.5,'rgba(255,255,255,.5)');
+ /* 服:肩の光・襟・ボタン */
+ r(13,31,22,q,shade(suit,.35)||suit);r(14,29,20,q,shade(suit,.3)||suit);
+ if(!L.ret&&!L.out){for(let i=0;i<7;i++){r(19-i*.35,29+i,.75,1,shade(suit,-.45)||suit);r(28.25+i*.35,29+i,.75,1,shade(suit,-.45)||suit)}r(23.6,39.5,.8,.8,'#d9d9d9');r(23.6,42,.8,.8,'#d9d9d9');r(16,40,4,q,shade(suit,-.35)||suit)}
+
+ /* 髪の毛筋と光 */
+ if(!bald&&!f){let hd=shade(hair,-.35)||hair,hl=shade(hair,.5)||hair;for(let i=0;i<7;i++)r(18.5+i*1.6,7.5,.3,2.5,hd);r(19,6.5,9,.5,hl);r(18,8,.5,2,hl)}
+ if(f){let hd=shade(hair,-.35)||hair;for(let i=0;i<5;i++)r(17.5+i*2.8,8,.3,2.5,hd);r(15.5,13,.3,10,hd);r(32,13,.3,10,hd)}
+ /* 額の光・鼻・あご・耳 */
+ r(20,11,8,.5,'rgba(255,255,255,.22)');r(23.25,17,.5,2.5,'rgba(255,255,255,.3)');r(24.5,18.5,.75,1.5,'rgba(150,80,50,.35)');r(18,22.5,12,1,'rgba(150,80,50,.16)');r(16.25,16,.5,2,'rgba(150,80,50,.35)');r(31.25,16,.5,2,'rgba(150,80,50,.35)');
+ /* 眉を濃く */
+ r(20,13.75,3,.5,a<60?'#14100e':'#6a6662');r(25,13.75,3,.5,a<60?'#14100e':'#6a6662');
+ /* 口元 */
+ r(22,21.5,4,.25,'rgba(120,40,40,.35)');
+ /* 服のしわ・ポケット・ネクタイの柄 */
+ if(!L.ret&&!L.out){let sd=shade(suit,-.3)||suit;r(15,37,.3,7,sd);r(32.5,37,.3,7,sd);r(13,41,6,.3,sd);r(29,41,6,.3,sd);r(29.5,33,4,.3,sd);
+  if(!f){let tie=FCOL[L.fac]||'#888',tl=shade(tie,.45)||tie;for(let y=32;y<37;y+=1.5)r(23,y,2,.3,tl);r(22.5,29.25,3,.5,tl)}}
+ r(10,44.5,28,.5,'rgba(0,0,0,.25)')}
+/* 場面の人物(高精細の細部)。vFig から呼ぶ */
+function vFigHD(r,x,yy,hx0,hy,o,p,t){const su=o.su||'#22324f',hr=o.hr||'#1d1a18',sk=o.sk||VSK;
+ if(!(p=='sad'||p=='bow')&&t%9!=0){[hx0+1,hx0+4].forEach(ex=>{r(ex-.34,hy+2.67,1.67,1.34,'#fbfbfb');r(ex,hy+2.67,1,1.34,'#2a1a12');r(ex+.34,hy+3,.34,.34,'#fff')})}
+ if(!o.bald){r(hx0+1,hy-1,3,.34,shade(hr,.45)||hr);r(hx0+.67,hy-.67,1.5,.34,shade(hr,.3)||hr)}
+ r(hx0+.34,hy+4.67,1,.5,'rgba(240,110,110,.35)');r(hx0+4.67,hy+4.67,1,.5,'rgba(240,110,110,.35)');r(hx0+5.34,hy+1,.67,5,'rgba(150,80,50,.2)');
+ r(x+1,yy-14,8,.34,shade(su,.35)||su);if(!o.nt){r(x+3.33,yy-14,.67,4,shade(su,-.45)||su);r(x+6,yy-14,.67,4,shade(su,-.45)||su);r(x+4.67,yy-9.67,.67,.67,'#d9d9d9')}
+ r(x+1.67,yy-.67,2.67,.67,'#0e0e14');r(x+5.67,yy-.67,2.67,.67,'#0e0e14')}
+
+/* ===== 画質の追加:ps1=PS1風の高精細ドット/poly=ポリゴン(プリレンダー背景+角ばった3Dの人物) ===== */
+const GFXN={fc:'ファミコン風(従来)',sfc:'スーパーファミコン風(高精細)',ps1:'プレイステーション風ドット(超高精細)',poly:'ポリゴン風(3D)'};
+/* なめらかな光(32段)と暖色の色調、絵画のような質感 */
+function softLight(c,w,h,seed){c.save();c.setTransform(1,0,0,1,0,0);let g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(255,240,215,.2)');g.addColorStop(.45,'rgba(255,240,215,0)');g.addColorStop(1,'rgba(20,10,40,.28)');c.fillStyle=g;c.fillRect(0,0,w,h);
+ let rg=c.createRadialGradient(w/2,h*.45,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.75);rg.addColorStop(0,'rgba(0,0,0,0)');rg.addColorStop(1,'rgba(10,5,25,.3)');c.fillStyle=rg;c.fillRect(0,0,w,h);
+ c.globalCompositeOperation='soft-light';c.fillStyle='rgba(255,215,170,.35)';c.fillRect(0,0,w,h);c.globalCompositeOperation='source-over';
+ let s0=seed||7;for(let i=0;i<w*h/38;i++){s0=(s0*1103515245+12345)&0x7fffffff;let x=s0%w;s0=(s0*1103515245+12345)&0x7fffffff;let y=s0%h;c.fillStyle=(s0&1)?'rgba(255,255,255,.06)':'rgba(0,0,0,.07)';c.fillRect(x,y,1,1)}c.restore()}
+/* 色つきの細い輪郭線と、上側の縁の光 */
+function spriteOutPS(dst,sp,S){const w=sp.width,h=sp.height,[m,mc]=lay('mask',w,h),[n,nc]=lay('mask2',w,h),sc=sp.getContext('2d');
+ sc.save();sc.setTransform(1,0,0,1,0,0);sc.globalCompositeOperation='source-atop';let g=sc.createLinearGradient(0,0,w*.7,h);g.addColorStop(0,'rgba(255,245,225,.24)');g.addColorStop(.5,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(30,10,50,.34)');sc.fillStyle=g;sc.fillRect(0,0,w,h);sc.restore();
+ mc.drawImage(sp,0,0);mc.globalCompositeOperation='source-in';mc.fillStyle='#3b2230';mc.fillRect(0,0,w,h);
+ nc.drawImage(sp,0,0);nc.globalCompositeOperation='source-in';nc.fillStyle='rgba(255,250,235,.55)';nc.fillRect(0,0,w,h);nc.globalCompositeOperation='destination-out';nc.drawImage(sp,0,2);
+ dst.save();dst.setTransform(1,0,0,1,0,0);dst.globalAlpha=.25;dst.drawImage(m,S*.6,S*.6);dst.globalAlpha=.85;for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])dst.drawImage(m,dx,dy);dst.globalAlpha=1;dst.drawImage(sp,0,0);dst.drawImage(n,0,0);dst.restore()}
+function drawCharPS(cv,L){const S=6,W=48,P=W*S;if(cv.width!=P){cv.width=P;cv.height=P}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,P,P);
+ const [b,bc]=lay('pb',P,P);bc.setTransform(S,0,0,S,0,0);bg(bc,mkR(bc,S,W,W),scene(L),L);softLight(bc,P,P,11);c.drawImage(b,0,0);
+ const [sp,sc]=lay('ps',P,P);sc.setTransform(S,0,0,S,0,0);person(mkR(sc,S,W,W),L);personHD((x,y,w,h,col)=>{sc.fillStyle=col;sc.fillRect(x,y,w,h)},L);spriteOutPS(c,sp,S);
+ c.setTransform(S,0,0,S,0,0);let g=c.createLinearGradient(0,45,0,48);g.addColorStop(0,'rgba(20,10,30,.5)');g.addColorStop(1,'rgba(20,10,30,.85)');c.fillStyle=g;c.fillRect(0,45,48,3);for(let i=0;i<Math.min(L.terms,15);i++){c.fillStyle='#f0d070';c.fillRect(1+i*3,46,2,1);c.fillStyle='#fff6c8';c.fillRect(1+i*3,46,2,.2)}c.setTransform(1,0,0,1,0,0)}
+function vDrawPS(cv,v,t){const S=4,w=VW*S,h=VH*S;if(cv.width!=w){cv.width=w;cv.height=h}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);
+ const [b,bc]=lay('pvb',w,h);bc.setTransform(S,0,0,S,0,0);(VBG[v.bg]||VBG.diet)(mkR(bc,S,VW,VH),t);softLight(bc,w,h,5);c.drawImage(b,0,0);
+ const [sp,sc]=lay('pvs',w,h);sc.setTransform(S,0,0,S,0,0);const rs=mkR(sc,S,VW,VH);
+ (v.it||[]).forEach(a=>{let [ty,x,y,o]=a;if(ty=='me')vFig(rs,x,y,vMe(o),t);else if(ty in VNP)vFig(rs,x,y,Object.assign({},VNP[ty],o||{}),t);else if(VP[ty])VP[ty](rs,x,y,t,o)});
+ spriteOutPS(c,sp,S);c.setTransform(S,0,0,S,0,0);const r=vr(c);(v.fx?[].concat(v.fx):[]).forEach(f=>VFX[f]&&VFX[f](r,t));c.setTransform(1,0,0,1,0,0)}
+/* ---- ポリゴン ---- */
+function pg(c,pts,col){c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.closePath();c.fillStyle=col;c.fill()}
+/* 光の向き(左上)に対する面の明るさで色を変える */
+const LX=-.55,LY=-.83;
+function facetCol(col,nx,ny,k){let d=nx*LX+ny*LY;return shade(col,(k||.28)*d)||col}
+/* 多角形の頭(中心 cx,cy、半径 r、分割 n)を面ごとに塗る */
+function polyHead(c,cx,cy,rx,ry,n,col,from,to){from=from??0;to=to??Math.PI*2;for(let i=0;i<n;i++){let a0=from+(to-from)*i/n,a1=from+(to-from)*(i+1)/n,am=(a0+a1)/2;pg(c,[[cx,cy],[cx+Math.cos(a0)*rx,cy+Math.sin(a0)*ry],[cx+Math.cos(a1)*rx,cy+Math.sin(a1)*ry]],facetCol(col,Math.cos(am)*.8,Math.sin(am)*.8))}}
+function quadF(c,pts,col,nx,ny){pg(c,pts,facetCol(col,nx,ny))}
+/* 場面の人物(ポリゴン) */
+function polyFig(c,x,y,o,t){o=o||{};const sk=o.sk||VSK,su=o.su||'#22324f',hr=o.hr||'#1d1a18',p=o.p||'stand',b=(p=='cheer'||p=='jump')&&t%2?-1:0,yy=y+b,bow=p=='bow',sad=p=='sad';
+ c.fillStyle='rgba(0,0,0,.22)';c.beginPath();c.ellipse(x+5,y,4.5,1,0,0,Math.PI*2);c.fill();
+ const lg=o.leg||'#1f2430',run=p=='run'&&t%2;
+ quadF(c,[[x+2,yy-6.5],[x+4.6,yy-6.5],[x+4.3,yy-.6],[x+2.2,yy-.6]],lg,-.6,0);quadF(c,[[x+5.4,yy-6.5],[x+8,yy-6.5],[x+7.8+(run?1:0),yy-.6],[x+5.7+(run?1:0),yy-.6]],lg,.6,0);
+ pg(c,[[x+1.6,yy-.9],[x+4.6,yy-.9],[x+4.8,yy],[x+1.4,yy]],'#121218');pg(c,[[x+5.4,yy-.9],[x+8.4,yy-.9],[x+8.6,yy],[x+5.2,yy]],'#121218');
+ /* 胴体(左右2面) */
+ quadF(c,[[x+.6,yy-14.5],[x+5,yy-14.8],[x+5,yy-6],[x+1.3,yy-6]],su,-.7,-.2);quadF(c,[[x+5,yy-14.8],[x+9.4,yy-14.5],[x+8.7,yy-6],[x+5,yy-6]],su,.7,-.2);
+ if(o.f)quadF(c,[[x+1.2,yy-7],[x+8.8,yy-7],[x+9.4,yy-4.5],[x+.6,yy-4.5]],su,0,.6);
+ if(!o.nt){pg(c,[[x+3.6,yy-14.7],[x+6.4,yy-14.7],[x+5,yy-11]],'#f4f4f4');pg(c,[[x+4.5,yy-13.8],[x+5.5,yy-13.8],[x+5.4,yy-10.2],[x+5,yy-9.6],[x+4.6,yy-10.2]],o.tie||'#b3262e')}
+ if(o.tas)pg(c,[[x+.8,yy-14.4],[x+2.2,yy-14.6],[x+9,yy-6.6],[x+7.6,yy-6.2]],'#fafafa');
+ if(o.rose){pg(c,[[x+7.2,yy-13],[x+8.4,yy-13.4],[x+8.6,yy-12.2],[x+7.6,yy-11.8]],'#d0213a')}
+ /* 腕 */
+ const arm=(sx,up,dir)=>{if(up){quadF(c,[[sx,yy-14.3],[sx+1.6*dir,yy-14.3],[sx+1.9*dir,yy-20.5],[sx+.5*dir,yy-20.5]],su,dir,-.3);polyHead(c,sx+1.2*dir,yy-21,.9,.9,5,sk)}else{quadF(c,[[sx,yy-14.3],[sx+1.5*dir,yy-14.3],[sx+1.3*dir,yy-8],[sx-.2*dir,yy-8.3]],su,dir,0);polyHead(c,sx+.6*dir,yy-7.6,.8,.8,5,sk)}};
+ if(p=='wave'){arm(x+.6,0,-1);arm(x+9.4,t%2,1)}else if(p=='cheer'||p=='jump'){arm(x+.6,1,-1);arm(x+9.4,1,1)}else if(p=='point'||p=='shake'){arm(x+.6,0,-1);quadF(c,[[x+9.2,yy-14.3],[x+9.2,yy-12.6],[x+14,yy-12.2+(p=='shake'&&t%2?.6:0)],[x+14,yy-13.6]],su,.3,-.5);polyHead(c,x+14.3,yy-13,.8,.8,5,sk)}else if(p=='mic'||p=='talk'&&false){arm(x+.6,0,-1);quadF(c,[[x+9.2,yy-14.3],[x+10.6,yy-14],[x+10.4,yy-17.6],[x+9.2,yy-17.6]],su,.4,-.4);polyHead(c,x+9.9,yy-18.2,.8,.8,5,sk);pg(c,[[x+10.4,yy-21],[x+11.4,yy-21],[x+11.2,yy-18.6],[x+10.6,yy-18.6]],'#222')}else{arm(x+.6,0,-1);arm(x+9.4,0,1)}
+ /* 首と頭 */
+ const hx=x+5+(bow?1.6:0),hy=yy-18.2+(bow?2.4:sad?.8:0);quadF(c,[[x+4,yy-15.2],[x+6,yy-15.2],[x+5.8,yy-14.4],[x+4.2,yy-14.4]],sk,0,.5);
+ polyHead(c,hx,hy,3.3,3.7,10,sk);
+ if(o.f){polyHead(c,hx,hy-.4,3.8,4.1,8,hr,Math.PI,Math.PI*2);quadF(c,[[hx-3.8,hy-.6],[hx-2.6,hy-.6],[hx-2.8,hy+3.6],[hx-3.9,hy+3.4]],hr,-.8,0);quadF(c,[[hx+2.6,hy-.6],[hx+3.8,hy-.6],[hx+3.9,hy+3.4],[hx+2.8,hy+3.6]],hr,.8,0)}
+ else if(o.bald){quadF(c,[[hx-3.4,hy-1],[hx-2.7,hy-1.2],[hx-2.8,hy+1],[hx-3.4,hy+.8]],hr,-.8,0);quadF(c,[[hx+2.7,hy-1.2],[hx+3.4,hy-1],[hx+3.4,hy+.8],[hx+2.8,hy+1]],hr,.8,0)}
+ else{polyHead(c,hx,hy-.6,3.6,3.7,8,hr,Math.PI*1.05,Math.PI*1.95);pg(c,[[hx-3.5,hy-.9],[hx+3.5,hy-.9],[hx+3.1,hy-.1],[hx-1,hy-.4],[hx-3.2,hy+.2]],shade(hr,-.1)||hr)}
+ const ey=hy+.6;if(sad||bow||t%9==0){pg(c,[[hx-1.9,ey],[hx-.7,ey],[hx-.7,ey+.35],[hx-1.9,ey+.35]],'#2a1a12');pg(c,[[hx+.7,ey],[hx+1.9,ey],[hx+1.9,ey+.35],[hx+.7,ey+.35]],'#2a1a12')}
+ else{pg(c,[[hx-1.9,ey-.4],[hx-.6,ey-.4],[hx-.7,ey+.8],[hx-1.8,ey+.8]],'#fbfbfb');pg(c,[[hx+.6,ey-.4],[hx+1.9,ey-.4],[hx+1.8,ey+.8],[hx+.7,ey+.8]],'#fbfbfb');pg(c,[[hx-1.5,ey-.3],[hx-.9,ey-.3],[hx-.9,ey+.75],[hx-1.5,ey+.75]],'#2a1a12');pg(c,[[hx+.9,ey-.3],[hx+1.5,ey-.3],[hx+1.5,ey+.75],[hx+.9,ey+.75]],'#2a1a12')}
+ if(o.gl){c.strokeStyle='#5a4a3a';c.lineWidth=.25;c.strokeRect(hx-2.1,ey-.6,1.7,1.6);c.strokeRect(hx+.4,ey-.6,1.7,1.6)}
+ let mo=p=='talk'||p=='mic'?(t%2?.7:.35):.3;pg(c,[[hx-.8,hy+2.3],[hx+.8,hy+2.3],[hx+.6,hy+2.3+mo],[hx-.6,hy+2.3+mo]],p=='cheer'||p=='jump'||o.smile?'#b5574f':'#8a4a42');
+ pg(c,[[hx-.2,hy+.9],[hx+.5,hy+1.8],[hx-.3,hy+1.8]],shade(sk,-.2)||sk);
+ if(sad&&t%3==0)pg(c,[[hx+2,ey+1],[hx+2.4,ey+1],[hx+2.3,ey+2],[hx+2.1,ey+2]],'#7fb6e8')}
+/* ステータス画面の主人公(ポリゴン) */
+function polyPerson(c,L){const a=L.age,f=L.sx=='女性',nb=L.sx=='回答しない',pm=L.pos.g=='pm',spk=L.pos.d=='sp'||L.pos.d=='dp';
+ const hair=a<42?'#1d1a18':a<52?'#34302d':a<60?'#6a6663':a<70?'#a8a5a2':'#e0ddd8',sk='#f0c8a2';
+ const suit=L.ret?'#6b7d4f':L.out?'#3a5f8f':pm?'#16181d':spk?'#2a2a30':f?'#2d3e63':'#22324f',tie=FCOL[L.fac]||'#888',bald=!f&&!nb&&a>=68;
+ c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(24,47.5,16,1.6,0,0,Math.PI*2);c.fill();
+ /* 胴体:肩・胸・腕を面で */
+ quadF(c,[[9,34],[16,29.5],[24,30.5],[24,48],[8,48]],suit,-.7,-.3);quadF(c,[[24,30.5],[32,29.5],[39,34],[40,48],[24,48]],suit,.7,-.2);
+ quadF(c,[[8,34.5],[11.5,32],[12,48],[7.5,48]],suit,-.95,0);quadF(c,[[36.5,32],[40,34.5],[40.5,48],[36,48]],suit,.95,0);
+ if(L.ret){pg(c,[[19,30],[29,30],[26,40],[24,41],[22,40]],'#efe9da');for(let y=33;y<46;y+=4)polyHead(c,24,y,.6,.6,5,'#ddd')}
+ else if(L.out){pg(c,[[19.5,30],[28.5,30],[24,36]],'#f5f5f5');pg(c,[[12,31],[15.5,30],[37,46],[33.5,47.5]],'#fafafa');for(let i=0;i<4;i++)pg(c,[[15+i*5.5,32.5+i*3.8],[16.5+i*5.5,32+i*3.8],[17.5+i*5.5,33.5+i*3.8],[16+i*5.5,34+i*3.8]],'#c8102e')}
+ else{pg(c,[[19.5,30],[28.5,30],[24,39]],f?'#f6dde6':'#f5f5f5');quadF(c,[[19.5,30],[22,30.5],[24,39],[20.5,40]],suit,-.9,0);quadF(c,[[26,30.5],[28.5,30],[27.5,40],[24,39]],suit,.9,0);
+  if(!f){pg(c,[[22.6,30.2],[25.4,30.2],[24.9,32],[23.1,32]],shade(tie,.1)||tie);pg(c,[[23.1,32],[24.9,32],[25.6,38],[24,39.6],[22.4,38]],tie);pg(c,[[23.4,32.5],[24,32.5],[23.3,37.5],[22.8,37.5]],shade(tie,.35)||tie)}else polyHead(c,24,32,1,1,6,'#e8c560');
+  polyHead(c,15.5,34,.9,.9,6,'#7d2a6a');if(L.mc>0&&!L.rose)polyHead(c,32,34,1,1,6,'#e8c560');
+  if(L.rose){polyHead(c,31.5,33.5,1.6,1.6,7,'#d0213a');pg(c,[[31.3,35],[31.8,35],[31.6,38],[31.2,38]],'#2f7a2f')}
+  if(L.pos.g&&!pm){quadF(c,[[26,38],[36.5,37.5],[37,45],[26.5,45.5]],'#2c5aa0',.2,-.6);pg(c,[[27,39],[35.5,38.7],[35.5,39.3],[27,39.6]],'#fff')}
+  for(let y=40;y<46;y+=2.6)polyHead(c,24,y,.45,.45,5,'#d9d9d9')}
+ /* 首 */
+ quadF(c,[[20.5,23],[27.5,23],[27,30.5],[21,30.5]],sk,0,.5);pg(c,[[21,27],[27,27],[27,30.5],[21,30.5]],shade(sk,-.18)||sk);
+ /* 耳 */
+ polyHead(c,15.6,17.5,1.6,2.4,6,sk);polyHead(c,32.4,17.5,1.6,2.4,6,sk);
+ /* 頭(楕円を14面に) */
+ polyHead(c,24,16.2,8.4,9.6,14,sk);
+ /* あごの面 */
+ pg(c,[[18,21],[30,21],[27.5,25.3],[24,26],[20.5,25.3]],shade(sk,-.06)||sk);
+ /* 髪 */
+ if(f){polyHead(c,24,14.5,9.6,10.4,10,hair,Math.PI*.98,Math.PI*2.02);quadF(c,[[14.4,14],[17,13.5],[17,26],[14,26.5]],hair,-.8,0);quadF(c,[[31,13.5],[33.6,14],[34,26.5],[31,26]],hair,.8,0);pg(c,[[15.5,13],[32.5,13],[30,10.5],[24,9],[18,10.5]],shade(hair,.06)||hair)}
+ else if(bald){quadF(c,[[15.5,11.5],[17.5,10.8],[17.6,17.5],[15.6,17]],hair,-.8,0);quadF(c,[[30.5,10.8],[32.5,11.5],[32.4,17],[30.4,17.5]],hair,.8,0)}
+ else{polyHead(c,24,14.2,9,9.4,10,hair,Math.PI*1.02,Math.PI*1.98);pg(c,[[15.4,13.6],[32.6,13.6],[31.5,11],[26,11.8],[21,10.6],[16.5,11.5]],shade(hair,-.05)||hair);quadF(c,[[15.2,12],[16.8,12],[16.8,nb?24:18],[15.3,nb?24:17.5]],hair,-.8,0);quadF(c,[[31.2,12],[32.8,12],[32.7,nb?24:17.5],[31.2,nb?24:18]],hair,.8,0);
+  pg(c,[[18,8.4],[23,7.4],[22,8.6],[18.4,9.4]],shade(hair,.45)||hair)}
+ /* 眉・目・鼻・口 */
+ const bw=a<60?'#2a2523':'#8a8682';pg(c,[[18.8,13.4],[22.6,13],[22.6,13.8],[18.8,14.2]],bw);pg(c,[[25.4,13],[29.2,13.4],[29.2,14.2],[25.4,13.8]],bw);
+ [[19,16],[25.2,16]].forEach(([ex,ey])=>{pg(c,[[ex,ey-.6],[ex+3.8,ey-.6],[ex+3.5,ey+1.6],[ex+.3,ey+1.6]],'#fbfbfb');pg(c,[[ex+1.1,ey-.5],[ex+2.7,ey-.5],[ex+2.7,ey+1.5],[ex+1.1,ey+1.5]],'#3a2418');pg(c,[[ex+1.5,ey],[ex+2.3,ey],[ex+2.3,ey+1.1],[ex+1.5,ey+1.1]],'#120c08');pg(c,[[ex+1.3,ey-.3],[ex+1.8,ey-.3],[ex+1.8,ey+.2],[ex+1.3,ey+.2]],'#fff');pg(c,[[ex,ey-.7],[ex+3.8,ey-.7],[ex+3.8,ey-.4],[ex,ey-.4]],'#2a1a12')});
+ pg(c,[[24,16.8],[25.3,20],[23.6,20.2]],shade(sk,-.22)||sk);pg(c,[[23.6,17],[24,16.8],[23.6,20.2],[23.2,19.6]],shade(sk,.25)||sk);
+ const smile=L.rose||pm||L.ret,frown=L.out;pg(c,smile?[[21.4,21.6],[26.6,21.6],[25.4,22.8],[22.6,22.8]]:frown?[[21.6,22.6],[26.4,22.6],[25.4,21.8],[22.6,21.8]]:[[21.8,21.8],[26.2,21.8],[26,22.4],[22,22.4]],smile?'#a8383a':'#b5574f');
+ pg(c,[[18.6,19],[20.8,19],[20.6,19.8],[18.8,19.8]],'rgba(240,110,110,.35)');pg(c,[[27.2,19],[29.4,19],[29.2,19.8],[27.4,19.8]],'rgba(240,110,110,.35)');
+ if(a>=56){c.strokeStyle=shade(sk,-.25)||sk;c.lineWidth=.25;c.beginPath();c.moveTo(19,20.6);c.lineTo(20,21.6);c.moveTo(29,20.6);c.lineTo(28,21.6);c.stroke()}
+ if(a>=52){c.strokeStyle='#5a4a3a';c.lineWidth=.45;c.strokeRect(18.5,14.8,4.8,3.6);c.strokeRect(24.7,14.8,4.8,3.6);c.beginPath();c.moveTo(23.3,16.2);c.lineTo(24.7,16.2);c.moveTo(18.5,15.6);c.lineTo(16.4,15.2);c.moveTo(29.5,15.6);c.lineTo(31.6,15.2);c.stroke();c.fillStyle='rgba(200,230,255,.18)';c.fillRect(18.7,15,4.4,3.2);c.fillRect(24.9,15,4.4,3.2)}
+ if(pm){quadF(c,[[6.5,29],[9.5,29],[9.8,34],[6.8,34.5]],suit,-.6,0);polyHead(c,8,27.5,1.6,1.9,7,sk)}}
+/* プリレンダー風の背景:元の絵を柔らかく拡大し、光と陰を重ねる */
+function prerender(dst,draw,W,H,S,seed){const [s0,c0]=lay('pr_'+W,W,H);draw((x,y,w,h,col)=>{c0.fillStyle=col;c0.fillRect(x,y,w,h)},c0);
+ const [m,mc]=lay('pr2_'+W,W*2,H*2);mc.imageSmoothingEnabled=true;mc.drawImage(s0,0,0,W*2,H*2);dst.save();dst.setTransform(1,0,0,1,0,0);dst.imageSmoothingEnabled=true;dst.imageSmoothingQuality='high';dst.drawImage(m,0,0,W*S,H*S);dst.restore();softLight(dst,W*S,H*S,seed)}
+function drawCharPoly(cv,L){const S=6,W=48,P=W*S;if(cv.width!=P){cv.width=P;cv.height=P}const c=cv.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,P,P);
+ prerender(c,(r,c0)=>bg(c0,r,scene(L),L),W,W,S,3);
+ c.setTransform(S,0,0,S,0,0);c.imageSmoothingEnabled=true;polyPerson(c,L);
+ let g=c.createLinearGradient(0,45,0,48);g.addColorStop(0,'rgba(20,20,40,.45)');g.addColorStop(1,'rgba(20,20,40,.85)');c.fillStyle=g;c.fillRect(0,45,48,3);for(let i=0;i<Math.min(L.terms,15);i++)polyHead(c,2+i*3,46.5,.8,.8,6,'#f0c050');c.setTransform(1,0,0,1,0,0)}
+function vDrawPoly(cv,v,t){const S=4,w=VW*S,h=VH*S;if(cv.width!=w){cv.width=w;cv.height=h}const c=cv.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);
+ prerender(c,(r)=>(VBG[v.bg]||VBG.diet)(r,t),VW,VH,S,9);
+ /* 小道具はプリレンダー風、人物はポリゴンで */
+ const [pp,pc]=lay('pp',VW,VH);const rp=(x,y,ww,hh,col)=>{pc.fillStyle=col;pc.fillRect(x,y,ww,hh)};c.setTransform(S,0,0,S,0,0);c.imageSmoothingEnabled=true;rp.P=c;
+ const figs=[];(v.it||[]).forEach(a=>{let [ty,x,y,o]=a;if(ty=='me')figs.push([x,y,vMe(o)]);else if(ty in VNP)figs.push([x,y,Object.assign({},VNP[ty],o||{})]);else if(VP[ty])VP[ty](rp,x,y,t,o)});
+ c.save();c.setTransform(1,0,0,1,0,0);c.imageSmoothingEnabled=true;c.drawImage(pp,0,0,w,h);c.restore();
+ c.setTransform(S,0,0,S,0,0);figs.forEach(([x,y,o])=>polyFig(c,x,y,o,t));
+ const r=vr(c);(v.fx?[].concat(v.fx):[]).forEach(f=>VFX[f]&&VFX[f](r,t));c.setTransform(1,0,0,1,0,0)}
+
 /* ===== ドット絵(48x48) =====
    年齢:髪色・しわ・眼鏡/性別:髪型・服装/当選回数:下部の金の点/役職:背景と持ち物/
    経歴:閣僚経験の金バッジ・ベテランのポケットチーフ/地元(選挙区):風景/出身:室内の絵画 */
@@ -779,7 +952,11 @@ function person(r,L){
  if(a>=56){r(19,20,1,1,sh);r(28,20,1,1,sh)}if(a>=66){r(21,12,6,1,sh)}if(a>=74){r(20,19,1,1,sh);r(27,19,1,1,sh)}
  if(a>=52){const g='#6b5a48';r(19,15,4,1,g);r(25,15,4,1,g);r(19,18,4,1,g);r(25,18,4,1,g);r(19,15,1,4,g);r(22,15,1,4,g);r(25,15,1,4,g);r(28,15,1,4,g);r(23,16,2,1,g);r(17,16,2,1,g);r(29,16,2,1,g)}
 }
-function drawChar(cv,L){if(!cv||!cv.getContext)return;const c=cv.getContext('2d');c.imageSmoothingEnabled=false;
+function drawCharHD(cv,L){const S=4,W=48,P=W*S;if(cv.width!=P){cv.width=P;cv.height=P}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,P,P);
+ const [b,bc]=lay('cb',P,P);bc.setTransform(S,0,0,S,0,0);bg(bc,mkR(bc,S,W,W),scene(L),L);bandLight(bc,P,P);c.drawImage(b,0,0);
+ const [sp,sc]=lay('cs',P,P);sc.setTransform(S,0,0,S,0,0);person(mkR(sc,S,W,W),L);personHD((x,y,w,h,col)=>{sc.fillStyle=col;sc.fillRect(x,y,w,h)},L);spriteOut(c,sp,S);
+ c.setTransform(S,0,0,S,0,0);const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};r(0,45,48,3,'rgba(0,0,0,.6)');for(let i=0;i<Math.min(L.terms,15);i++){r(1+i*3,46,2,1,'#f0d070');r(1+i*3,46,2,.25,'#fff6c8');r(1+i*3,46.75,2,.25,'#a07a20')}c.setTransform(1,0,0,1,0,0)}
+function drawChar(cv,L){if(!cv||!cv.getContext)return;const gm=GFX();try{if(gm=='sfc')return drawCharHD(cv,L);if(gm=='ps1')return drawCharPS(cv,L);if(gm=='poly')return drawCharPoly(cv,L)}catch(e){}if(cv.width!=48){cv.width=48;cv.height=48}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);
  const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};c.clearRect(0,0,48,48);
  bg(c,r,scene(L),L);person(r,L);
  r(0,45,48,3,'rgba(0,0,0,.6)');for(let i=0;i<Math.min(L.terms,15);i++)r(1+i*3,46,2,1,'#f0d070')}
@@ -857,7 +1034,7 @@ pr6:[['政府の政策への対案を打ち出す','p4,k3,m-1'],['次の選挙�
 so:[['党再建の議論を総務会で深める','n2,p2'],['執行部の責任を総務会で問う','k2,f1,i-2'],['党則の改正で党改革を進める','p2,i1,f-1'],['総務会で若手の登用を求める','n2,k2,i-1'],['野党共闘の是非を総務会で議論する','o2,d1,n1'],['総裁の求心力の回復を支える','i2,f1'],['党の資金の使い道を点検する','k2,m1'],['地方組織の不満を聞き取る','b2,n2']],
 so3:[['党再建の方針を総務会でまとめる','i3,p2,f-1'],['執行部の責任論を収める','i2,f2,k-2'],['党の綱領の見直しを主導する','p3,k2'],['野党共闘への参加の是非を決める','o3,i1,f-1'],['若手の声を総務会に反映させる','n3,k1,i-1'],['総裁選の前倒しを求める声に対応する','i2,n2'],['党の資金難への対策をまとめる','m3,i1,k-1'],['地方組織の立て直しを後押しする','b2,w1,m-2']],
 fx:[['派閥として党の再建を支える','f2,i1,C2'],['派閥から離党者を出さないよう引き留める','f2,m-2,C3'],['派閥の資金で落選した議員を支える','f2,m-4,N1,C2'],['次の総裁選に向けて派閥の候補を立てる','i2,I3,L-2'],['他派閥と連携して党の結束を図る','n2,L4'],['派閥の勉強会で政権奪還の政策を練る','p2,I1,C1'],['派閥の若手を地方回りに送り出す','f1,b1,C1'],['派閥の存続をかけて勢力の拡大に動く','i1,m-5,N3,C-1']],
-opl:[['内閣不信任案を提出する','k3,d2,U1'],['党首討論で首相を追及する','k4,d2,o-1'],['他の野党と政策協議を行う','o4,n1,f-1'],['与党の一部に連立の組み替えを持ちかける','o3,i2,k-2,G1'],['党の結束を訴え、離党者を防ぐ','f3,i2,m-2'],['全国を遊説して政権奪還を訴える','w2,k3,m-4'],['政権の政策に是々非々で協力する','p2,o2,k-1'],['党改革の断行を宣言する','k3,w1,f-2']]});
+opl:[['内閣不信任案を提出する','k2,d1,o-1,U1'],['党首討論で首相を追及する','k3,d1,o-2'],['他の野党と政策協議を行う','o3,f-2,k-1'],['与党の一部に連立の組み替えを持ちかける','o2,i1,k-2,f-1,G1'],['党の結束を訴え、離党者を防ぐ','f3,i1,m-3'],['全国を遊説して政権奪還を訴える','w1,k2,m-5,d-1'],['政権の政策に是々非々で協力する','p2,o2,f-2,k-1'],['党改革の断行を宣言する','k2,w1,f-3,n-1']]});
 /* ---- 状況ごとの政策課題 ---- */
 const GOP=[
 {fd:'opp',t:'野党:政府予算案への対応',x:['自民党は野党です。政府の予算案にどう向き合うかで、野党としての存在感が問われます。','対案を示して責任ある野党を示す','反対を貫いて政権との違いを鮮明にする'],o:[['予算案の組み替え動議を出す','p3,d2,m-1'],['反対を貫き、問題点を国会で追及する','k3,d2,o-1'],['国民生活に直結する部分には賛成する','p2,o2,f-1'],['審議拒否で政権に揺さぶりをかける','k2,w1,d-2']]},
@@ -883,10 +1060,16 @@ const GMJ=[
 {fd:'maj',t:'単独与党:党内の主導権争い',x:['単独与党の自民党では、野党よりも党内の派閥間の争いが政局を左右します。','主流派について人事で有利な立場をとる','反主流派として次をねらう'],o:[['主流派の一員として執行部を支える','i2,f2,k-1'],['反主流派と連携して発言力を高める','k2,n2,i-1'],['派閥間の調整役を買って出る','n3,i1,m-1'],['争いから距離を置いて政策に専念する','p3,k1,i-1']]},
 {fd:'maj',t:'単独与党:連立を組むかどうか',x:['単独で過半数がありますが、参議院の状況や将来の選挙をにらんで、他党と連立を組む案が出ています。','連立で安定した政権基盤をつくる','単独で十分であり、他党に譲る必要はない'],o:[['連立を組むよう党内で主張する','o4,i1,f-1,J1'],['単独政権の維持を主張する','f2,i1,o-1'],['政策ごとの協力にとどめる','o2,p1'],['判断を執行部に任せる','f1,k-1']]}];
 /* 首相のときの政策課題の選択肢(状況ごと) */
-const PMO={
+const PMO_OLD={
 maj:[['政府の方針として決断し、閣議決定と法案の提出を主導する','p4,i2,w1,o-2,k-1'],['与党内の意見集約を優先し、党の了承を得てから進める','f3,i2,p1,w-1'],['野党と協議し、修正して幅広い合意をめざす','o3,d2,p1,i-2'],['記者会見や国会答弁で、国民に直接訴える','k4,w2,f-2,n-1']],
 coal:[['連立相手の了承を取り付け、政府方針として決断する','p4,i2,o-1,k-1'],['与党内の意見集約を優先する','f3,i2,p1,w-1'],['連立相手の主張を大きく取り入れて合意する','o4,p1,i-2,f-1'],['国民に直接訴え、連立相手を動かす','k4,w2,o-2,n-1']],
 minor:[['野党の一部と合意を取り付けて閣議決定する','o3,p2,i-1,m-1'],['与党内をまとめてから野党に協力を求める','f3,i1,o1,p-1'],['野党の修正をのんで成立を優先する','o4,p1,i-3'],['国民に直接訴え、野党に圧力をかける','k4,w1,o-3']]};
+const PMO={
+maj:[['政府方針として決断し、閣議決定と法案の提出を主導する','p4,i1,o-3,f-1,w-1'],['与党内の意見集約を優先し、党の了承を得てから進める','f3,i1,p-1,k-2'],['野党と協議し、修正して幅広い合意をめざす','o3,d2,i-2,f-2'],['記者会見や国会答弁で、国民に直接訴える','k3,w1,f-3,n-2,m-2']],
+coal:[['連立相手の了承を取り付け、政府方針として決断する','p3,i1,o-2,m-1'],['与党内の意見集約を優先する','f3,p-1,k-2'],['連立相手の主張を大きく取り入れて合意する','o4,i-3,f-2'],['国民に直接訴え、連立相手を動かす','k3,w1,o-3,n-2']],
+minor:[['野党の一部と合意を取り付けて閣議決定する','o3,p1,i-2,m-2'],['与党内をまとめてから野党に協力を求める','f3,o-1,p-2'],['野党の修正をのんで成立を優先する','o3,p1,i-3,f-2'],['国民に直接訴え、野党に圧力をかける','k3,o-4,w-1']]};
+/* 首相の役職の仕事(8種。毎ターン4つ) */
+PJ.pm=[['内閣改造で党内の均衡を図る','i2,f2,k-2,m-1'],['経済対策を打ち出して支持を集める','w1,p1,m-3,b-1'],['外遊して首脳外交を展開する','k3,d-2,b-1'],['与野党の党首会談で協調を探る','o3,d1,f-2'],['党則の改正で、総裁の連続任期の延長を提案する','i1,k-1,f-1,x1'],['官邸主導で官僚の人事を握る','i3,n-2,k-1'],['派閥の領袖たちと会食を重ね、求心力を保つ','f3,n1,k-2,m-2'],['記者会見を増やして説明責任を果たす','k2,d1,i-1,m-1']];
 /* 状況ごとの突発の出来事(st=出る状況) */
 INC.push(
 {t:'連立相手が離脱をちらつかせた',st:['coal'],d:'連立相手が政策への不満から、連立離脱の可能性に言及しました。',o:[['要求をのんで連立を維持する','o2,i-1,p-1'],['要求を突っぱねる(連立崩壊の恐れ)','i2,k1,X1']]},
@@ -953,6 +1136,8 @@ dp:[{t:'副議長:議長の代理',d:'議長が体調を崩し、本会議の議
 sp:[{t:'議長:与野党の激突',d:'重要法案をめぐって与野党が激突し、議長のあっせんが求められています。',o:[['議長あっせん案を示す','d4,k2'],['当事者の協議を見守る','d1']]},{t:'議長:不信任決議案の扱い',d:'内閣不信任決議案の採決の日程を決めなければなりません。',o:[['中立の立場で速やかに採決する','d3,k1'],['与野党の協議を待つ','o2,d1']]},{t:'議長:議員の不祥事',d:'議員の不祥事について、議長として対応を求められています。',o:[['議院運営委員会に検討を促す','d2,k1'],['各党の判断に任せる','n1']]},{t:'議長:議長公邸での懇談',d:'各党の代表を議長公邸に招いて懇談する機会があります。',o:[['与野党の融和を呼びかける','o3,k1'],['静かに意見を聞く','d2']]},{t:'議長:国会の歴史的な節目',d:'国会の記念式典で、議長として式辞を述べます。',o:[['民主主義の大切さを訴える','k3'],['国会改革の必要を訴える','p2,k1']]}],
 fx:[{t:'派閥:会長の健康問題',d:'派閥の会長の健康不安が伝えられています。',o:[['会長を支えて派閥をまとめる','f3,C2'],['後継の体制を水面下で探る','i2,f-1,C-1']]},{t:'派閥:若手の造反',d:'派閥の若手が総裁選で別の候補を推すと言い出しました。',o:[['個別に会って説得する','n2,f1,C3'],['自由に任せる','k1,C-3']]},{t:'派閥:他派閥との合流話',d:'別の派閥から合流の打診がありました。',o:[['合流交渉に前向きに応じる','i2,N8,C-5,L3'],['独自路線を守る','f2,C2']]},{t:'派閥:資金パーティーの収支',d:'派閥の資金パーティーの収支報告をめぐって指摘を受けました。',o:[['収支を全面的に公開する','k2,m-2,C1'],['事務的な誤りとして処理する','k-2,I-2']]},{t:'派閥:研修会の開催',d:'派閥の夏の研修会の企画を任されました。',o:[['大物ゲストを招いて盛り上げる','k2,m-2,I2'],['政策の勉強会を中心にする','p2,C2']]}],
 opl:[{t:'野党党首:党首討論',d:'首相との党首討論の日が来ました。',o:[['政権の失政を鋭く追及する','k4,w1,o-1'],['対案を示して論戦を挑む','p3,k2']]},{t:'野党党首:野党共闘の申し入れ',d:'他の野党から共闘の申し入れがありました。',o:[['共闘に応じる','o4,f-2'],['独自路線を貫く','f2,o-2']]},{t:'野党党首:党の資金難',d:'野党暮らしで党の資金が細っています。',o:[['資金集めに全国を回る','m4,k-1'],['党の経費を大胆に削る','i1,n-1']]},{t:'野党党首:離党者の続出',d:'党から離党者が相次いでいます。',o:[['一人ずつ会って引き留める','n3,f2'],['去る者は追わず結束を固める','i2,k1,n-2']]},{t:'野党党首:政権の不祥事',d:'政権の閣僚の不祥事が報じられました。',o:[['辞任を求めて国会で追及する','k3,d2'],['内閣不信任案の提出を検討する','k2,U1']]}]};
+/* 首相のイベントの効果(どの選択にも代償がある) */
+[['p2,k1,f-1','k3,p1,f-3,n-1','p3,o-2,w-1','k2,o1,i-2'],['f3,i1,k-3,w-1','k3,p1,f-4,C-2','k3,i-3,f-2','p1,f-1,k-2'],['i1,k1,f-1,D1','i1,n-1','p2,d1,i-2,k-1','i1,o-3,k-1'],['p4,i1,w-3,b-3','p1,k-1,m-1','w2,b2,p-3,i-2','p3,d1,f-2,m-1'],['p3,i1,w-2,o-4','k1,d2,i-1','o3,i-3,f-2','p2,o1,f-1'],['p3,i1,o-2,k-1','k2,i-2,p-1','p2,m1,b-2','k2,b1,i-2'],['k2,o2,i-2,f-1','o3,k1,f-3,w-1','k2,i1,o-3','p2,m1,f-1'],['k4,p1,i-2,f-1','p1,i1,o-2','o2,p1,m-1','o2,k1,f-3'],['b3,p-2,m-1','w1,k1,p-2,m-2','p3,b-2,f-1','p2,k-2,w-2'],['p3,b-3,w-1','p3,d1,f-2,w-1','p1,k1,m-1','w1,p-3,k-1'],['p3,k1,i-2,n-2','k2,p2,n-3','p3,k1,f-4','n2,k-2'],['p3,k1,b-2,f-1','k2,p1,i-2,m-2','b3,p-2,m-1','f2,k-2'],['p3,k-2,w-1','k2,i-3,m-2','p2,k1,m-2,b-1','p1,d1,k-1'],['w1,b1,p1,m-3,i-1','p3,f-3,w-1','p2,i-1,m-1','w1,k1,m-2,p-1'],['k1,f-2,i-1','f2,k-3,w-2','k1,i-2','k2,p1,m-1,f-2'],['i1,k-3,w-2','k1,m-2,i-1','k1,d1,i-2,w-1','k1,i-3,Q1'],['k3,b1,d-1,m-1','p2,i1,k-1','p3,m-2,f-1','p2,k1,m-1'],['p3,i1,w-2,o-3','k1,o2,i-1','p1,m-2,k-2','d1,o1,k-1'],['o3,f-2,J1','i1,o-5,J0','o4,f-4,i-1','f1,k-1'],['k4,w1,m-4,f-4,i-1','k2,p1,m-2,f-1','k1,p1,f-2','f2,k-3,w-2'],['i1,k-2,f-1,x1','n2,f1,i-2','k2,i-3','p1,k-1'],['k2,p1,m-1','p2,m1,b-1','k2,o1,i-1','k1,o2,m-2'],['i1,f-1,m-1','k1,D1','p1,k1,f-3','k1,i-3,Q1'],['d2,p1,f-1','o2,d1,i-1','f2,o-1','f1,k-1']].forEach((L,i)=>L.forEach((ef,j)=>{if(PMEV[i]&&PMEV[i].o[j])PMEV[i].o[j][1]=ef}));
 ROLEV.sec.forEach(e=>e.rk='sec');Object.keys(ROLEV).forEach(k=>ROLEV[k].forEach(e=>{e.rk=k;INC.push(e)}));
 /* いまの役職の種類(複数) */
 function roleKeys(){if(!s||s.ret||s.out)return[];let a=[],add=k=>{if(k&&!a.includes(k))a.push(k)};
@@ -1001,7 +1186,7 @@ paper:(r,t)=>{r(0,0,VW,VH,'#ece7da');r(4,3,88,42,'#f7f4ea');r(6,5,50,6,'#222');r
 rain:(r,t)=>{vSky(r,'gray');r(0,30,VW,18,'#6e7a82');for(let i=0;i<30;i++)r((i*11+t)%VW,(i*7+t*4)%46,1,3,'#cfe0f5')}};
 function vFlag(r,x,y,t){r(x,y,1,24,'#c9c9c9');let w=(t%4<2)?0:1;r(x+1,y+w,12,8,'#fff');r(x+5,y+2+w,4,4,'#c8102e')}
 /* ---- 人物(足元の位置 x,y) ---- */
-function vFig(r,x,y,o,t){o=o||{};const sk=o.sk||VSK,su=o.su||'#22324f',hr=o.hr||'#1d1a18',p=o.p||'stand',b=(p=='cheer'||p=='jump')&&t%2?-1:0,yy=y+b;
+function vFig(r,x,y,o,t){if(r.P){polyFig(r.P,x,y,o,t);return}o=o||{};const sk=o.sk||VSK,su=o.su||'#22324f',hr=o.hr||'#1d1a18',p=o.p||'stand',b=(p=='cheer'||p=='jump')&&t%2?-1:0,yy=y+b;
  let hd=p=='bow'?3:p=='sad'?1:0,hx=p=='bow'?2:0;
  r(x+2,yy-6,2,6,o.leg||'#1f2430');r(x+6,yy-6,2,6,o.leg||'#1f2430');if(p=='run'&&t%2){r(x+1,yy-3,2,3,'#1f2430');r(x+7,yy-5,2,3,'#1f2430')}
  r(x+1,yy-14,8,8,su);if(o.f)r(x+1,yy-8,8,3,su);
@@ -1022,7 +1207,7 @@ function vFig(r,x,y,o,t){o=o||{};const sk=o.sk||VSK,su=o.su||'#22324f',hr=o.hr||
  if(o.gl){r(hx0+1,hy+3,2,1,'#6b5a48');r(hx0+4,hy+3,2,1,'#6b5a48')}
  if(p=='sad'||p=='bow'){r(hx0+1,hy+4,1,1,'#333');r(hx0+4,hy+4,1,1,'#333');if(p=='sad'&&t%3==0)r(hx0+5,hy+5,1,2,'#7fb6e8')}
  else{let bl=t%9==0;r(hx0+1,hy+3,1,bl?0:1,'#222');r(hx0+4,hy+3,1,bl?0:1,'#222');if(p=='talk'||p=='mic'){r(hx0+2,hy+5,2,t%2?2:1,'#8a3a3a')}else if(p=='cheer'||p=='jump'||o.smile)r(hx0+2,hy+5,2,1,'#b5574f')}
-}
+ if(r.S)vFigHD(r,x,yy,hx0,hy,o,p,t)}
 function vMe(o){let L=look(),a=L.age;return Object.assign({su:L.ret?'#6b7d4f':L.out?'#3a5f8f':L.pos&&L.pos.g=='pm'?'#16181d':'#22324f',hr:a<42?'#1d1a18':a<52?'#34302d':a<60?'#6a6663':a<70?'#a8a5a2':'#e0ddd8',f:L.sx=='女性',gl:a>=52,tie:FCOL[L.fac]||'#888',bald:L.sx=='男性'&&a>=68,tas:L.out&&!L.ret},o||{})}
 const VNP={a:{su:'#444b55',hr:'#555'},b:{su:'#2d3e63',hr:'#ccc',gl:1},c:{su:'#5a4a3a',hr:'#222',f:1},d:{su:'#1e2a3a',hr:'#888',bald:1},e:{su:'#6a2d2d',hr:'#3a2a20'},f:{su:'#3a5a3a',hr:'#111',nt:1},g:{su:'#7a7a7a',hr:'#ddd',gl:1},h:{su:'#c8a060',hr:'#3a2a20',nt:1,f:1}};
 /* ---- 小道具 ---- */
@@ -1095,14 +1280,19 @@ leaves:(r,t)=>{const C=['#e07a3a','#d0453a','#e0b040'];for(let i=0;i<14;i++)r((i
 heat:(r,t)=>{if(t%3==0)for(let i=0;i<5;i++)r(i*20+5,20+i%3,8,1,'rgba(255,255,255,.3)')},
 redflash:(r,t)=>{if(t%6<2)r(0,0,96,48,'rgba(200,30,40,.12)')}};
 /* ---- 場面の部品を描く ---- */
-function vDraw(cv,v,t){const c=cv.getContext('2d');c.imageSmoothingEnabled=false;const r=vr(c);c.clearRect(0,0,VW,VH);
+function vDrawHD(cv,v,t){const S=3,w=VW*S,h=VH*S;if(cv.width!=w){cv.width=w;cv.height=h}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);
+ const [b,bc]=lay('vb',w,h);bc.setTransform(S,0,0,S,0,0);(VBG[v.bg]||VBG.diet)(mkR(bc,S,VW,VH),t);bandLight(bc,w,h);c.drawImage(b,0,0);
+ const [sp,sc]=lay('vs',w,h);sc.setTransform(S,0,0,S,0,0);const rs=mkR(sc,S,VW,VH);
+ (v.it||[]).forEach(a=>{let [ty,x,y,o]=a;if(ty=='me')vFig(rs,x,y,vMe(o),t);else if(ty in VNP)vFig(rs,x,y,Object.assign({},VNP[ty],o||{}),t);else if(VP[ty])VP[ty](rs,x,y,t,o)});
+ spriteOut(c,sp,S);c.setTransform(S,0,0,S,0,0);const r=vr(c);(v.fx?[].concat(v.fx):[]).forEach(f=>VFX[f]&&VFX[f](r,t));c.setTransform(1,0,0,1,0,0)}
+function vDraw(cv,v,t){const gm=GFX();try{if(gm=='sfc')return vDrawHD(cv,v,t);if(gm=='ps1')return vDrawPS(cv,v,t);if(gm=='poly')return vDrawPoly(cv,v,t)}catch(e){}if(cv.width!=VW){cv.width=VW;cv.height=VH}const c=cv.getContext('2d');c.imageSmoothingEnabled=false;c.setTransform(1,0,0,1,0,0);const r=vr(c);c.clearRect(0,0,VW,VH);
  (VBG[v.bg]||VBG.diet)(r,t);
  (v.it||[]).forEach(a=>{let [ty,x,y,o]=a;if(ty=='me')vFig(r,x,y,vMe(o),t);else if(ty in VNP)vFig(r,x,y,Object.assign({},VNP[ty],o||{}),t);else if(VP[ty])VP[ty](r,x,y,t,o)});
  (v.fx?[].concat(v.fx):[]).forEach(f=>VFX[f]&&VFX[f](r,t))}
 /* ---- 場面の判定に使う情報 ---- */
 function vCtx(b,e,c0,o,d,pre){const all=(o||[]).concat(d||[]).join(' '),el=s.elec.length>b.ne?s.elec[s.elec.length-1]:null,P0=Object.values(b.ps).filter(Boolean),P1=Object.values(s.pos).filter(Boolean),np=P1.filter(x=>!P0.includes(x)),gone=P0.filter(x=>!P1.includes(x));
- return {all,k:String(b.ky),et:e&&e.t||'',ot:c0&&c0[0]||'',inc:pre.inc||'',mu:pre.mu||[],el,win:el&&!el.ret&&el.win,rv:el&&el.rv,lost:el&&!el.ret&&!el.win,np,gone,sel:s.selr,j:s.jnote,pos:s.pos,out:s.out,wasOut:b.out,ret:s.ret,end:s.end&&!pre.e0,er:s.endReason||'',y:s.y,h:b.h,age:age(),terms:s.terms,ru:s.ruling,ruCh:b.ru!=s.ruling,pmCh:pm()!=b.pm,left:s.left,wasLeft:pre.left,dm:s.st.m-pre.st.m,ds:k=>s.st[k]-pre.st[k],fac:s.fac,fac0:pre.fac,ach:Object.keys(s.ach||{}).length>pre.ach,pm:s.pos.g=='pm',wasPm:b.ps.g=='pm'}}
-const has=(c,re)=>re.test(c.all),npHas=(c,ids)=>ids.some(id=>c.np.includes(id)),posIs=(c,ids)=>ids.some(id=>Object.values(c.pos).includes(id)),ek=(c,ks)=>ks.includes(c.k);
+ return {all,k:String(b.ky),et:e&&e.t||'',ot:c0&&c0[0]||'',inc:pre.inc||'',mu:pre.mu||[],el,win:el&&!el.ret&&el.win,rv:el&&el.rv,lost:el&&!el.ret&&!el.win,np,gone,sel:s.selr,j:s.jnote,pos:s.pos,out:s.out,wasOut:b.out,ret:s.ret,end:s.end&&!pre.e0,er:s.endReason||'',y:s.y,h:b.h,age:age(),terms:s.terms,ru:s.ruling,ruCh:b.ru!=s.ruling,pmCh:pmBase(pm())!=pmBase(b.pm),left:s.left,wasLeft:pre.left,dm:s.st.m-pre.st.m,ds:k=>s.st[k]-pre.st[k],fac:s.fac,fac0:pre.fac,ach:Object.keys(s.ach||{}).length>pre.ach,pm:s.pos.g=='pm',wasPm:b.ps.g=='pm'}}
+const has=(c,re)=>re.test(c.all),npHas=(c,ids)=>ids.some(id=>c.np.includes(id)),posIs=(c,ids)=>ids.some(id=>Object.values(c.pos).includes(id)),ek=(c,ks)=>ks.includes(c.k)&&!!E[c.k]&&!!c.et&&c.et.indexOf(E[c.k].t)==0;
 /* ---- 場面の一覧(pr=優先度、m=条件)。同じ優先度で複数当てはまるときは順番に入れ替わる ---- */
 const VIG=[
 /* 終幕 */
@@ -1209,7 +1399,7 @@ const VIG=[
 {id:'h_yusei',pr:43,cap:'郵政解散。刺客と造反の総選挙へ',bg:'station',it:[['me',40,44,{p:'mic',tas:1}],['car',58,46]],m:c=>ek(c,['2005.5'])},
 {id:'h_kokumin',pr:42,cap:'憲法改正の国民投票法が成立',bg:'chamber',it:[['me',42,40,{p:'hold'}],['book',60,30]],m:c=>ek(c,['2007'])},
 {id:'h_lehman',pr:42,cap:'リーマン・ショック。株価が急落',bg:'night',it:[['me',40,44,{p:'sad'}],['chart',62,40,{dn:1}],['tv',6,40]],m:c=>ek(c,['2009'])},
-{id:'h_kotai',pr:43,cap:'政権交代。自民党は野党の席へ',bg:'chamber',it:[['me',20,40,{p:'sad'}],['crowd',40,48,{n:9}]],fx:'gloom',m:c=>ek(c,['2009.5'])},
+{id:'h_kotai',pr:43,ok2:1,cap:'政権交代。自民党は野党の席へ',bg:'chamber',it:[['me',20,40,{p:'sad'}],['crowd',40,48,{n:9}]],fx:'gloom',m:c=>ek(c,['2009.5'])&&!c.ru},
 {id:'h_311',pr:43,cap:'東日本大震災。被災地で支援にあたる',bg:'disaster',it:[['me',40,44,{p:'stand',su:'#3a5f8f'}],['helmet',42,24],['shovel',56,44],['rubble',64,46]],fx:'snow',m:c=>ek(c,['2011'])},
 {id:'h_moritomo',pr:42,cap:'公文書をめぐる問題で国会が紛糾',bg:'lobby',it:[['me',42,46,{p:'hold'}],['docs',58,46],['camera',10,46]],fx:'flash',m:c=>ek(c,['2017'])},
 {id:'h_reiwa',pr:42,cap:'「令和」の時代が始まる',bg:'sakura',it:[['me',42,44,{p:'stand',smile:1}],['flag',72,44]],fx:'petals',m:c=>ek(c,['2019.5'])},
@@ -1455,7 +1645,7 @@ const EXT=['1985.5','1991','1995','1997.5','2001.5','2002.5','2009','2011','2020
 const PMDEP=['1980.5','1988.5','2005.5','2007','2012','2015.5','2017','2019.5','2022.5','2023','2025','2026','2026.5'];
 const EREF={t:'IF:政治改革と選挙制度',x:['自民党が政権を維持したため、細川内閣による政治改革関連法は生まれませんでした。政治とカネへの批判は続いており、選挙制度をどうするかは自民党が決めることになります。','党主導で改革を進め、政治への信頼を取り戻す','中選挙区制には地域の多様な声を届ける良さもある'],o:[['中選挙区制を維持し、政治資金の規制強化で対応する','b3,f3,k-2,w-1,S1'],['自民党案の小選挙区比例代表並立制(小選挙区300・比例171)を成立させる','i3,p3,f-2,S2'],['野党と協議し、小選挙区300・比例200の並立制で合意する','d3,o3,k2,S3'],['結論を先送りし、党内の議論を続ける','f2,k-3,w-1,S2']]};
 EX.eref=EREF.x;
-const histOK=k=>{if(s.div&&+k>s.div)return EXT.includes(k);if(s.ifTL&&s.tlAt&&+k>s.tlAt&&PMDEP.includes(k))return false;return true};
+const histOK=k=>{if(s.ruling!=histRuling(+k)&&!EXT.includes(k)&&!['1994','2012.5'].includes(k)&&ECOND[k]==null)return false;if(s.div&&+k>s.div)return EXT.includes(k);if(s.ifTL&&s.tlAt&&+k>s.tlAt&&PMDEP.includes(k))return false;return true};
 function ldpPrez(k){let L=PM.filter(x=>x[0]<k&&!/細川|羽田|村山|鳩山|菅直人|野田/.test(x[1])).pop();return L?{n:L[1].split('→').pop(),since:L[0]}:{n:'自民党総裁',since:k}}
 function setEsys(v,o,late){s.esys=v;let t=v=='mid'?'IF:政治改革で中選挙区制が維持されました。政治資金の規制は強化されます':v=='ldp'?'IF:'+(late?'結論を先送りするうちに党内の大勢が固まり、':'')+'自民党案の小選挙区比例代表並立制(小選挙区300・比例171)が成立しました。次の総選挙から導入されます':'IF:与野党の合意で小選挙区比例代表並立制(小選挙区300・比例200)が成立しました。次の総選挙から導入されます';o.push(t);lg(t,'if')}
 function divHist(o,k,why){if(s.div)return;s.div=+k;let lp=ldpPrez(+k);if(!s.ifTL){s.ifTL=1;s.tlAt=+k;s.selNow=null;if(!s.prez||s.prez.n==s.name&&s.pos.g!='pm')s.prez={n:lp.n,since:lp.since,cons:1}}if(!s.offH){s.offH=1;setNpcD()}
@@ -1763,7 +1953,7 @@ function R(){const A=$('app');if(!s){A.innerHTML=setup();fillDn('dn','東京都'
  A.innerHTML=hd()+`<main class="${tab==1&&!s.end?'pb':''}">`+[dash,turn,elec,party,fac,gov,diet,car,tl,sv][tab]()+'</main>';
  if(tab==0)drawChar($('cv'),look());if($('cv2'))drawChar($('cv2'),look());if(tab==2&&$('mdn'))fillDn('mdn',s.pf,s.dn);_lt=tno();try{vigStart()}catch(e){}}
 /* ===== 音(Web Audioでその場で合成。外部ファイルなし、曲はこのゲーム用のオリジナル) ===== */
-let SND={on:false,bgm:true,se:true,vol:.6,rep:true},AC=null,MG=null,seq={tr:null,step:0,next:0};
+let SND={on:false,bgm:true,se:true,vol:.6,rep:true,gfx:'sfc'},AC=null,MG=null,seq={tr:null,step:0,next:0};
 try{Object.assign(SND,JSON.parse(localStorage.getItem('ng_snd')||'{}'))}catch(e){}
 const mf=m=>440*Math.pow(2,(m-69)/12);
 function acInit(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.connect(AC.destination)}if(AC.state=='suspended')AC.resume();MG.gain.value=SND.vol;return true}catch(e){return false}}
@@ -1790,7 +1980,7 @@ setInterval(()=>{if(!AC||!SND.on||!SND.bgm||AC.state!='running')return;let sc=bs
  if(seq.tr!=sc){seq.tr=sc;seq.step=0;seq.next=AC.currentTime+.15}if(seq.next<AC.currentTime-.1)seq.next=AC.currentTime+.05;
  while(seq.next<AC.currentTime+.3){let i=seq.step%T.m.length;tone(seq.next,T.m[i],sd*1.6,T.mt,T.mt=='square'?.03:.06);tone(seq.next,T.b[i],sd*1.8,'triangle',.07);seq.next+=sd;seq.step++}},60);
 function sndUI(){const ck=(k,l,d)=>`<label class="o${SND[k]?' sel':''}"><input type=checkbox ${SND[k]?'checked':''} onchange="sndSet('${k}',this.checked)"><span class=ot><span><b>${l}</b></span><span class=hn><i class=nt>${d}</i></span></span></label>`;
- return `<h2>音と表示の設定</h2>${ck('rep','結果レポート','「決定」のたびに半年の結果をまとめて表示します')}${ck('on','音を鳴らす','オフにするとBGMも効果音も止まります')}${ck('bgm','BGM','場面ごとに11曲:通常・総選挙・総裁選・首相在任・閣僚在任・議長・野党・少数与党・浪人・災害や危機・タイトル/引退後')}${ck('se','効果音','選択・決定・当選・落選・就任など')}<label class=vol>音量<input type=range id=vol min=0 max=1 step=.05 value="${SND.vol}" oninput="sndSet('vol',+this.value)"></label><p class=nt>音はこのページの中で合成しています(外部の音源ファイルは使いません)。ブラウザの仕組み上、画面を一度タップしてから鳴り始めます。スマートフォンはマナーモードだと鳴らないことがあります。</p>`}
+ return `<h2>音と表示の設定</h2><div class=fm><label>ドット絵の画質<select onchange="sndSet('gfx',this.value)">${['sfc','ps1','poly','fc'].map(k=>`<option value=${k} ${GFX()==k?'selected':''}>${GFXN[k]}</option>`).join('')}</select><small class=mu>ステータス画面の主人公と、前のターンからの変化の場面の絵に使われます</small></label></div>${ck('rep','結果レポート','「決定」のたびに半年の結果をまとめて表示します')}${ck('on','音を鳴らす','オフにするとBGMも効果音も止まります')}${ck('bgm','BGM','場面ごとに11曲:通常・総選挙・総裁選・首相在任・閣僚在任・議長・野党・少数与党・浪人・災害や危機・タイトル/引退後')}${ck('se','効果音','選択・決定・当選・落選・就任など')}<label class=vol>音量<input type=range id=vol min=0 max=1 step=.05 value="${SND.vol}" oninput="sndSet('vol',+this.value)"></label><p class=nt>音はこのページの中で合成しています(外部の音源ファイルは使いません)。ブラウザの仕組み上、画面を一度タップしてから鳴り始めます。スマートフォンはマナーモードだと鳴らないことがあります。</p>`}
 function sndSet(k,v){SND[k]=v;try{localStorage.setItem('ng_snd',JSON.stringify(SND))}catch(e){}
  if(k=='vol'){if(MG)MG.gain.value=v;return}
  if(SND.on){acInit();seq.tr=null;if(k=='on'&&v)sfx('ok')}else if(AC)AC.suspend();rm();if(s)R();else{let a=$('app');if(a)R()}}
